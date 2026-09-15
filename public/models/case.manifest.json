@@ -1,0 +1,64 @@
+{
+ "unit_mm": 1.0,
+ "open_deg": 58.0,
+ "lid_node": "Boitier_Couvercle",
+ "lid_pivot_local": [
+  0.0,
+  -9.4,
+  9.7942
+ ],
+ "size_mm": [
+  50.1,
+  21.19,
+  46.19
+ ],
+ "centre_offset_mm": [
+  0.0,
+  0.0,
+  0.0058
+ ],
+ "column_half_mm": [
+  7.514,
+  1.388
+ ],
+ "labels": {
+  "Boitier_Bouton": "Pairing button",
+  "Boitier_Charniere": "Stainless hinge",
+  "Boitier_Contact_00": "Charging contact",
+  "Boitier_Contact_01": "Charging contact",
+  "Boitier_Contact_10": "Charging contact",
+  "Boitier_Contact_11": "Charging contact",
+  "Boitier_Corps": "Case body",
+  "Boitier_Couvercle": "Lid",
+  "Boitier_LED": "Status light",
+  "Boitier_Logement": "Moulded insert",
+  "Boitier_USBC_Fond": "USB-C port",
+  "Boitier_USBC_Languette": "USB-C tongue",
+  "Case_Battery": "Case battery",
+  "Case_Board": "Case logic board",
+  "Case_Coil": "Wireless charging coil",
+  "Case_Magnet_0": "Alignment magnet",
+  "Case_Magnet_1": "Alignment magnet",
+  "Case_SoC": "Pairing chip"
+ },
+ "tris": {
+  "Boitier_Bouton": 1536,
+  "Boitier_Charniere": 3840,
+  "Boitier_Contact_00": 252,
+  "Boitier_Contact_01": 252,
+  "Boitier_Contact_10": 252,
+  "Boitier_Contact_11": 252,
+  "Boitier_Corps": 27610,
+  "Boitier_Couvercle": 12718,
+  "Boitier_LED": 1152,
+  "Boitier_Logement": 14474,
+  "Boitier_USBC_Fond": 2880,
+  "Boitier_USBC_Languette": 2304,
+  "Case_Battery": 1276,
+  "Case_Board": 108,
+  "Case_Coil": 2304,
+  "Case_Magnet_0": 380,
+  "Case_Magnet_1": 380,
+  "Case_SoC": 108
+ }
+}

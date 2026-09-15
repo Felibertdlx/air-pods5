@@ -1,0 +1,20 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+
+# blender leftovers
+*.blend1
+blender/__pycache__/
+__pycache__/
+
+# editor / OS
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# local tooling state
+.claude/

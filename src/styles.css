@@ -1,0 +1,1374 @@
+/* ===========================================================================
+   AirPods 5 — Sound, revealed
+
+   An original identity built on Apple's principles rather than their marks:
+   almost nothing on screen, one accent, hairlines instead of boxes, and an
+   instrument-style numeric readout that says the product is being measured
+   rather than advertised.
+   ======================================================================== */
+
+:root {
+  --ink: #0a0a0c;
+  --ink-2: #3b3b43;
+  --ink-3: #4a4a54;
+  --ground: #f2f2f4;
+  --line: rgba(10, 10, 12, 0.14);
+  --line-soft: rgba(10, 10, 12, 0.07);
+  /* The graphic accent and the text accent are different colours on purpose:
+     the teal that reads well as a hairline over 3D is 2.4:1 as small type. */
+  --accent: #0b8b78;
+  --accent-ink: #065349;
+  --scrim: 242, 242, 244;
+
+  --gutter: clamp(20px, 4.2vw, 68px);
+  --shell: min(1440px, 100%);
+
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Display',
+    'Segoe UI', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo,
+    Consolas, monospace;
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --ink: #f4f4f6;
+  --ink-2: #c4c4cd;
+  --ink-3: #9a9aa5;
+  --ground: #08080a;
+  --line: rgba(244, 244, 246, 0.18);
+  --line-soft: rgba(244, 244, 246, 0.08);
+  --accent: #5fe3c6;
+  --accent-ink: #5fe3c6;
+  --scrim: 4, 4, 6;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  /* Lenis drives this; the native behaviour would fight it. */
+  scroll-behavior: auto;
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  transition: background 900ms var(--ease), color 900ms var(--ease);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* the custom cursor replaces the system one, but only where there is one */
+  body,
+  body * {
+    cursor: none;
+  }
+
+  /* Not over the written half: there the pointer has real work to do, and a
+     text caret and a hand over a link are information the ring cannot give. */
+  .pages,
+  .pages * {
+    cursor: auto;
+  }
+
+  .pages a,
+  .pages button {
+    cursor: pointer;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* --- the canvas ---------------------------------------------------------- */
+
+.stage {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+.stage canvas {
+  display: block;
+  touch-action: pan-y;
+}
+
+.track {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------------------
+   The written half.
+
+   It scrolls over the fixed canvas rather than sitting beside it, so the two
+   halves share one document and one scrollbar. Opaque background: that is what
+   covers the canvas, and what tells the renderer it can stop.
+   ------------------------------------------------------------------------ */
+
+.pages {
+  position: relative;
+  z-index: 3;
+  background: var(--ground);
+  transition: background 900ms var(--ease);
+}
+
+.sec {
+  max-width: var(--shell);
+  margin-inline: auto;
+  padding: clamp(96px, 16vh, 200px) var(--gutter);
+  border-top: 1px solid var(--line-soft);
+}
+
+.sec:first-child {
+  border-top: 0;
+}
+
+.sec__head {
+  max-width: 34rem;
+}
+
+.sec__eyebrow {
+  margin: 0 0 clamp(20px, 3vh, 34px);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+}
+
+.sec__title {
+  margin: 0;
+  font-size: clamp(2rem, 4.6vw, 3.6rem);
+  font-weight: 200;
+  line-height: 1.06;
+  letter-spacing: -0.032em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.sec__title--sm {
+  font-size: clamp(1.7rem, 3.2vw, 2.5rem);
+}
+
+.sec__title--lg {
+  font-size: clamp(2.4rem, 7vw, 5rem);
+}
+
+.sec__cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: clamp(28px, 5vw, 80px);
+  margin-top: clamp(40px, 6vh, 72px);
+}
+
+.sec__lead {
+  margin: 0;
+  max-width: 42ch;
+  font-size: clamp(1.0625rem, 1.4vw, 1.3125rem);
+  font-weight: 300;
+  line-height: 1.56;
+  letter-spacing: -0.008em;
+  color: var(--ink);
+}
+
+.sec__lead--wide {
+  margin-top: clamp(28px, 4vh, 44px);
+  max-width: 50ch;
+}
+
+.sec__lead--centre {
+  margin-inline: auto;
+  text-align: center;
+}
+
+.sec__note {
+  margin: 0;
+  max-width: 34ch;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.sec__pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+  gap: clamp(32px, 5vw, 76px);
+  margin-top: clamp(56px, 9vh, 110px);
+}
+
+.sec__pair h3 {
+  margin: 0 0 14px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  font-size: 1.0625rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.sec__pair p {
+  margin: 0;
+  max-width: 36ch;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.62;
+  color: var(--ink-2);
+}
+
+/* --- figures ------------------------------------------------------------- */
+
+.figure {
+  margin: clamp(56px, 9vh, 120px) 0 0;
+}
+
+.figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 34rem;
+  margin-inline: auto;
+}
+
+.figure--wide img {
+  max-width: 46rem;
+}
+
+/* A live figure reserves its box before the canvas mounts, so bringing one in
+   on scroll never shifts the paragraph under it. */
+.figure--live .figure__frame {
+  width: 100%;
+  max-width: 34rem;
+  margin-inline: auto;
+  aspect-ratio: 1 / 1;
+}
+
+.figure--wide.figure--live .figure__frame {
+  max-width: 44rem;
+}
+
+.figure--live canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* The whole frame is the grab area, and it says so. */
+.figure--live .figure__frame {
+  touch-action: pan-y;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .pages .figure--live .figure__frame {
+    cursor: grab;
+  }
+
+  .pages .figure--live .figure__frame[data-grab] {
+    cursor: grabbing;
+  }
+}
+
+/* --- split section ------------------------------------------------------- */
+
+.sec--split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(32px, 6vw, 96px);
+  align-items: start;
+}
+
+.sec--split .figure {
+  margin: 0;
+}
+
+.figure--sticky {
+  position: sticky;
+  top: clamp(90px, 14vh, 150px);
+}
+
+.sec__body {
+  padding-block: clamp(0px, 4vh, 48px);
+}
+
+.sec__body .sec__lead {
+  margin-top: clamp(24px, 4vh, 40px);
+}
+
+/* --- definition facts ---------------------------------------------------- */
+
+.facts {
+  margin: clamp(40px, 6vh, 72px) 0 0;
+}
+
+.facts > div {
+  padding: 22px 0;
+  border-top: 1px solid var(--line-soft);
+}
+
+.facts dt {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.facts dd {
+  margin: 10px 0 0;
+  max-width: 38ch;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+/* --- parts list ---------------------------------------------------------- */
+
+.parts {
+  list-style: none;
+  margin: clamp(48px, 7vh, 88px) 0 0;
+  padding: 0;
+}
+
+.parts li {
+  display: grid;
+  grid-template-columns: 3.2rem minmax(0, 12rem) minmax(0, 1fr);
+  gap: clamp(12px, 2.4vw, 40px);
+  align-items: baseline;
+  padding: 20px 0;
+  border-top: 1px solid var(--line-soft);
+}
+
+.parts__n {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  color: var(--accent-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.parts__name {
+  font-size: 1.0625rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.parts__note {
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+/* --- spec tables --------------------------------------------------------- */
+
+/* A table is the one element allowed its own horizontal scroll, and only if
+   the viewport genuinely cannot hold it. The page body never scrolls sideways. */
+.spec__wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.spec {
+  width: 100%;
+  margin-top: clamp(40px, 6vh, 72px);
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.spec tr {
+  border-top: 1px solid var(--line-soft);
+}
+
+.spec th,
+.spec td {
+  padding: 20px 0;
+  vertical-align: baseline;
+  font-weight: 400;
+}
+
+.spec th {
+  width: min(42%, 18rem);
+  padding-right: clamp(16px, 3vw, 48px);
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.spec td {
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.spec__sub {
+  margin: clamp(72px, 11vh, 130px) 0 0;
+  font-size: 1.25rem;
+  font-weight: 400;
+  letter-spacing: -0.014em;
+  color: var(--ink);
+}
+
+/* --- close + footer ------------------------------------------------------ */
+
+.sec--close {
+  text-align: center;
+  padding-block: clamp(120px, 22vh, 260px);
+}
+
+.sec--close .sec__lead {
+  margin-top: clamp(24px, 4vh, 40px);
+  max-width: 40ch;
+}
+
+.cta {
+  margin-top: clamp(40px, 6vh, 64px);
+  min-height: 48px;
+  padding: 0 28px;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  background: none;
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 0.9375rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  transition:
+    background 420ms var(--ease),
+    color 420ms var(--ease);
+}
+
+.cta:hover,
+.cta:focus-visible {
+  background: var(--ink);
+  color: var(--ground);
+}
+
+.cta:focus-visible {
+  outline: 1px solid var(--accent-ink);
+  outline-offset: 4px;
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: var(--shell);
+  margin-inline: auto;
+  padding: 40px var(--gutter);
+  padding-bottom: max(40px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line-soft);
+}
+
+.foot__mark {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.foot__mark span {
+  margin-left: 0.45em;
+  font-family: var(--mono);
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--accent-ink);
+}
+
+.foot__note {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--ink-3);
+}
+
+/* --- chrome -------------------------------------------------------------- */
+
+.chrome {
+  position: fixed;
+  z-index: 20;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: clamp(18px, 2.6vw, 34px) var(--gutter);
+  padding-top: max(clamp(18px, 2.6vw, 34px), env(safe-area-inset-top));
+  pointer-events: none;
+}
+
+.chrome__mark {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45em;
+  border: 0;
+  background: none;
+  padding: 8px 12px 8px 0;
+  margin: -8px 0;
+  min-height: 44px;
+  font-family: var(--font);
+  font-size: clamp(12px, 1.05vw, 14px);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.chrome__mark:focus-visible {
+  outline: 1px solid var(--accent-ink);
+  outline-offset: 6px;
+  border-radius: 2px;
+}
+
+/* The section links stay put. Hiding them until the written half arrives
+   would mean nobody discovers it is there. */
+.chrome__links {
+  display: flex;
+  gap: clamp(14px, 2.2vw, 34px);
+  pointer-events: auto;
+}
+
+.chrome__links button {
+  border: 0;
+  background: none;
+  padding: 10px 0;
+  margin-block: -10px;
+  min-height: 44px;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  transition: color 320ms var(--ease);
+}
+
+.chrome__links button:hover,
+.chrome__links button:focus-visible {
+  color: var(--ink);
+}
+
+.chrome__links button:focus-visible {
+  outline: 1px solid var(--accent-ink);
+  outline-offset: 5px;
+  border-radius: 2px;
+}
+
+@media (max-width: 900px) {
+  .chrome__links {
+    gap: 14px;
+  }
+
+  .chrome__links button {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+}
+
+/* Only a phone loses the section links; a tablet has room for four words. */
+@media (max-width: 620px) {
+  .chrome__links {
+    display: none;
+  }
+}
+
+/* --- replay ------------------------------------------------------------- */
+
+.restart {
+  position: fixed;
+  z-index: 21;
+  left: var(--gutter);
+  bottom: clamp(26px, 4vh, 44px);
+  bottom: max(clamp(26px, 4vh, 44px), env(safe-area-inset-bottom));
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 0 16px 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(var(--scrim), 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: var(--ink-2);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition:
+    opacity 600ms var(--ease),
+    transform 600ms var(--ease),
+    color 320ms var(--ease),
+    border-color 320ms var(--ease);
+}
+
+.restart[data-show] {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.restart:hover,
+.restart:focus-visible {
+  color: var(--ink);
+  border-color: var(--ink-3);
+}
+
+.restart:focus-visible {
+  outline: 1px solid var(--accent-ink);
+  outline-offset: 4px;
+}
+
+.restart svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+
+@media (max-width: 560px) {
+  .restart span {
+    display: none;
+  }
+  .restart {
+    padding: 0;
+    width: 44px;
+    justify-content: center;
+  }
+}
+
+.chrome__mark-num {
+  font-family: var(--mono);
+  font-weight: 400;
+  font-size: 0.9em;
+  letter-spacing: 0;
+  color: var(--accent-ink);
+}
+
+.chrome__tools {
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 1.6vw, 22px);
+}
+
+/* --- sound --------------------------------------------------------------- */
+
+.sound {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  min-height: 44px;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--ink-3);
+  transition: color 320ms var(--ease);
+}
+
+.sound[data-on] {
+  color: var(--accent-ink);
+}
+
+.sound:hover,
+.sound:focus-visible {
+  color: var(--ink);
+}
+
+.sound:focus-visible {
+  outline: 1px solid var(--accent-ink);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Three bars. Flat when muted, moving when not — the state is the animation,
+   so there is no icon to read. */
+.sound__bars {
+  display: flex;
+  align-items: center;
+  gap: 2.5px;
+  height: 13px;
+}
+
+.sound__bars i {
+  display: block;
+  width: 1.5px;
+  height: 2px;
+  background: currentColor;
+  transition: height 420ms var(--ease);
+}
+
+.sound[data-on] .sound__bars i {
+  animation: bars 1100ms ease-in-out infinite;
+}
+
+.sound[data-on] .sound__bars i:nth-child(2) {
+  animation-delay: 160ms;
+}
+
+.sound[data-on] .sound__bars i:nth-child(3) {
+  animation-delay: 320ms;
+}
+
+@keyframes bars {
+  0%,
+  100% {
+    height: 3px;
+  }
+  50% {
+    height: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sound[data-on] .sound__bars i {
+    animation: none;
+    height: 8px;
+  }
+}
+
+/* --- language ------------------------------------------------------------ */
+
+.lang {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.lang button {
+  border: 0;
+  background: none;
+  padding: 0 7px;
+  min-width: 34px;
+  min-height: 44px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  color: var(--ink-3);
+  transition: color 320ms var(--ease);
+}
+
+.lang button[data-on] {
+  color: var(--ink);
+}
+
+.lang button:hover,
+.lang button:focus-visible {
+  color: var(--ink);
+}
+
+.lang button:focus-visible {
+  outline: 1px solid var(--accent-ink);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.chrome__theme {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  background: none;
+  padding: 8px 0 8px 12px;
+  margin: -8px 0;
+  color: var(--ink-2);
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: color 400ms var(--ease);
+  min-height: 44px;
+}
+
+.chrome__theme:hover,
+.chrome__theme:focus-visible {
+  color: var(--ink);
+}
+
+.chrome__theme:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 6px;
+  border-radius: 2px;
+}
+
+.chrome__theme-track {
+  position: relative;
+  width: 34px;
+  height: 14px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  transition: border-color 500ms var(--ease);
+}
+
+.chrome__theme-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ink);
+  transition:
+    transform 620ms var(--ease),
+    background 620ms var(--ease);
+}
+
+:root[data-theme='dark'] .chrome__theme-knob {
+  transform: translateX(18px);
+  background: var(--accent);
+}
+
+.chrome__theme-label {
+  min-width: 3.6em;
+  text-align: left;
+}
+
+/* --- captions ------------------------------------------------------------ */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  pointer-events: none;
+}
+
+.caption {
+  position: absolute;
+  bottom: clamp(88px, 12vh, 150px);
+  left: var(--gutter);
+  width: min(30rem, calc(100% - var(--gutter) * 2));
+  transition: opacity 520ms linear;
+  will-change: opacity;
+}
+
+/* A soft lift under the type. The product moves behind the captions and is
+   often the brightest thing in frame; without this the text loses contrast
+   exactly when the shot is at its best. Large and very diffuse, so it reads
+   as a gradient in the backdrop rather than as a panel. */
+.caption::before {
+  content: '';
+  position: absolute;
+  inset: -80% -45% -90% -40%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    60% 55% at 22% 62%,
+    rgba(var(--scrim), 0.82) 0%,
+    rgba(var(--scrim), 0.55) 38%,
+    rgba(var(--scrim), 0.22) 62%,
+    rgba(var(--scrim), 0) 82%
+  );
+}
+
+.caption[data-align='centre']::before {
+  background: radial-gradient(
+    58% 62% at 50% 50%,
+    rgba(var(--scrim), 0.78) 0%,
+    rgba(var(--scrim), 0.5) 40%,
+    rgba(var(--scrim), 0.2) 64%,
+    rgba(var(--scrim), 0) 84%
+  );
+}
+
+/* Centred captions sit above the product, never across it. */
+.caption[data-align='centre'] {
+  left: 50%;
+  bottom: auto;
+  top: clamp(18vh, 21vh, 24vh);
+  transform: translateX(-50%);
+  width: min(34rem, calc(100% - var(--gutter) * 2));
+  text-align: center;
+}
+
+.caption[data-align='right'] {
+  left: auto;
+  right: var(--gutter);
+  text-align: right;
+}
+
+.caption__eyebrow {
+  margin: 0 0 clamp(10px, 1.4vh, 18px);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+}
+
+.caption__title {
+  margin: 0;
+  font-size: clamp(2.1rem, 5.6vw, 4.2rem);
+  font-weight: 200;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  color: var(--ink);
+}
+
+.caption__title:empty {
+  display: none;
+}
+
+.caption__body {
+  margin: clamp(14px, 1.8vh, 22px) 0 0;
+  max-width: 34ch;
+  font-size: clamp(1rem, 1.2vw, 1.125rem);
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: -0.004em;
+  color: var(--ink-2);
+}
+
+.caption__body:empty {
+  display: none;
+}
+
+.caption[data-align='centre'] .caption__body {
+  margin-inline: auto;
+}
+
+/* --- readout ------------------------------------------------------------- */
+
+.readout {
+  position: absolute;
+  right: var(--gutter);
+  bottom: clamp(26px, 4vh, 44px);
+  bottom: max(clamp(26px, 4vh, 44px), env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.readout__index {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.readout__track {
+  display: block;
+  width: clamp(72px, 12vw, 148px);
+  height: 1px;
+  background: var(--line-soft);
+  overflow: hidden;
+}
+
+.readout__bar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--accent);
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+}
+
+/* --- scroll hint --------------------------------------------------------- */
+
+.hint {
+  position: fixed;
+  z-index: 16;
+  left: 50%;
+  bottom: clamp(26px, 4vh, 44px);
+  bottom: max(clamp(26px, 4vh, 44px), env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.hint__rule {
+  width: 1px;
+  height: 34px;
+  background: linear-gradient(to bottom, transparent, var(--ink-3));
+  transform-origin: 50% 0;
+  animation: drop 2600ms var(--ease) infinite;
+}
+
+.hint__text {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 400;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+@keyframes drop {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+    opacity: 0.25;
+  }
+  45% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+/* --- quality notice ------------------------------------------------------ */
+
+.tier {
+  position: fixed;
+  z-index: 18;
+  left: var(--gutter);
+  /* clear of the replay control, which owns the bottom-left corner */
+  bottom: calc(clamp(26px, 4vh, 44px) + 58px);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--ink-3);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 600ms var(--ease), transform 600ms var(--ease);
+  pointer-events: none;
+}
+
+.tier[data-show] {
+  opacity: 1;
+  transform: none;
+}
+
+/* --- cursor -------------------------------------------------------------- */
+
+.cursor {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+}
+
+@media (pointer: coarse) {
+  .cursor {
+    display: none;
+  }
+}
+
+.cursor__dot,
+.cursor__ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  will-change: transform;
+  transition: opacity 400ms var(--ease);
+}
+
+.cursor__dot {
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.cursor__ring {
+  width: 28px;
+  height: 28px;
+  margin: -14px 0 0 -14px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  transition:
+    opacity 400ms var(--ease),
+    width 520ms var(--ease),
+    height 520ms var(--ease),
+    margin 520ms var(--ease),
+    border-color 520ms var(--ease);
+}
+
+.cursor[data-mode='drag'] .cursor__ring {
+  width: 54px;
+  height: 54px;
+  margin: -27px 0 0 -27px;
+  border-color: var(--accent);
+}
+
+.cursor[data-mode='dragging'] .cursor__ring {
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border-color: var(--accent);
+}
+
+.cursor[data-mode='product'] .cursor__ring {
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
+}
+
+/* --- loader -------------------------------------------------------------- */
+
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  background: var(--ground);
+  opacity: 1;
+  transition: opacity 900ms var(--ease);
+}
+
+.loader[data-lifting] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loader[data-lifting] .loader__label {
+  opacity: 0;
+  transition: opacity 320ms var(--ease);
+}
+
+.loader__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+}
+
+.loader__label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.loader__track {
+  display: block;
+  width: min(180px, 42vw);
+  height: 1px;
+  background: var(--line-soft);
+  overflow: hidden;
+}
+
+.loader__bar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--ink);
+  transform-origin: 0 50%;
+  transform: scaleX(0.04);
+  transition: transform 700ms var(--ease);
+}
+
+/* ---------------------------------------------------------------------------
+   Smaller screens.
+
+   The 3D half already recomposes itself — a longer lens pulled further back,
+   so the product occupies the same share of a tall frame as it does of a wide
+   one. This is the written half catching up: every multi-column grid collapses
+   in one step, and nothing is allowed to set a width the viewport cannot meet.
+   ------------------------------------------------------------------------ */
+
+/* --- tablet -------------------------------------------------------------- */
+
+@media (max-width: 1000px) {
+  .sec--split {
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(32px, 6vh, 64px);
+  }
+
+  /* A sticky figure needs a column taller than itself to stick inside. */
+  .figure--sticky {
+    position: static;
+  }
+
+  .sec--split .figure img {
+    max-width: 26rem;
+  }
+
+  .sec__cols {
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(22px, 3.5vh, 34px);
+  }
+
+  .sec__note {
+    max-width: 46ch;
+  }
+}
+
+/* --- phone --------------------------------------------------------------- */
+
+@media (max-width: 760px) {
+  .caption {
+    bottom: clamp(96px, 15vh, 160px);
+    width: calc(100% - var(--gutter) * 2);
+  }
+
+  .caption__body {
+    max-width: 32ch;
+  }
+
+  .readout__track {
+    width: 48px;
+  }
+
+  .chrome__theme-label {
+    display: none;
+  }
+
+  .chrome__theme-track {
+    width: 30px;
+  }
+
+  :root[data-theme='dark'] .chrome__theme-knob {
+    transform: translateX(14px);
+  }
+
+  .sec {
+    padding-block: clamp(72px, 11vh, 120px);
+  }
+
+  /* Number, name and note stack: three columns in 375px leaves no measure. */
+  .parts li {
+    grid-template-columns: 2.4rem minmax(0, 1fr);
+    gap: 4px clamp(10px, 3vw, 18px);
+    padding: 18px 0;
+  }
+
+  .parts__note {
+    grid-column: 2;
+  }
+
+  .spec th,
+  .spec td {
+    display: block;
+    width: auto;
+    padding: 0;
+  }
+
+  .spec th {
+    padding-top: 18px;
+  }
+
+  .spec td {
+    padding: 6px 0 18px;
+  }
+
+  .figure {
+    margin-top: clamp(40px, 7vh, 64px);
+  }
+
+  .foot {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 460px) {
+  .caption__title {
+    font-size: clamp(1.75rem, 8.4vw, 2.4rem);
+  }
+
+  .caption__eyebrow {
+    font-size: 11.5px;
+    letter-spacing: 0.16em;
+  }
+
+  .chrome {
+    padding-inline: var(--gutter);
+  }
+
+  .chrome__tools {
+    gap: 6px;
+  }
+
+  .lang button {
+    min-width: 28px;
+    padding: 0 4px;
+  }
+
+  .sec__pair {
+    gap: 30px;
+  }
+}
+
+/* --- landscape phone ----------------------------------------------------- */
+
+@media (max-height: 480px) and (orientation: landscape) {
+  .caption {
+    bottom: clamp(56px, 12vh, 84px);
+    width: min(24rem, 52%);
+  }
+
+  .caption__title {
+    font-size: clamp(1.4rem, 4vw, 2rem);
+  }
+
+  .caption__body {
+    font-size: 0.9rem;
+    max-width: 30ch;
+  }
+
+  .hint {
+    display: none;
+  }
+}
+
+/* --- very wide ----------------------------------------------------------- */
+
+@media (min-width: 1800px) {
+  :root {
+    --shell: 1600px;
+  }
+}
+
+/* --- reduced motion ------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .hint__rule {
+    animation: none;
+    opacity: 0.6;
+  }
+
+  * {
+    transition-duration: 0.01ms !important;
+  }
+}

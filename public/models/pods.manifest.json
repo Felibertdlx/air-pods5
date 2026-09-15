@@ -1,0 +1,210 @@
+{
+ "unit_mm": 11.387631975867269,
+ "pods": {
+  "L": {
+   "parts": [
+    "Antenna_L",
+    "Battery_L",
+    "Component_00_L",
+    "Component_01_L",
+    "Contact_0_L",
+    "Contact_1_L",
+    "Driver_Basket_L",
+    "Driver_Diaphragm_L",
+    "Driver_Dome_L",
+    "Driver_Magnet_L",
+    "Driver_VoiceCoil_L",
+    "GrilleSpeaker_L",
+    "Logic_Board_L",
+    "MicPortTop_L",
+    "Mic_Bottom_L",
+    "Mic_Top_L",
+    "Sensor_Skin_L",
+    "Shell_L",
+    "SoC_L",
+    "Spout_L",
+    "VentBack_L"
+   ]
+  },
+  "R": {
+   "parts": [
+    "Antenna_R",
+    "Battery_R",
+    "Component_00_R",
+    "Component_01_R",
+    "Contact_0_R",
+    "Contact_1_R",
+    "Driver_Basket_R",
+    "Driver_Diaphragm_R",
+    "Driver_Dome_R",
+    "Driver_Magnet_R",
+    "Driver_VoiceCoil_R",
+    "GrilleSpeaker_R",
+    "Logic_Board_R",
+    "MicPortTop_R",
+    "Mic_Bottom_R",
+    "Mic_Top_R",
+    "Sensor_Skin_R",
+    "Shell_R",
+    "SoC_R",
+    "Spout_R",
+    "VentBack_R"
+   ]
+  }
+ },
+ "landmarks": {
+  "grille": [
+   0.0818,
+   0.55,
+   0.2433
+  ],
+  "spout": [
+   0.4308,
+   -0.2753,
+   0.8632
+  ],
+  "mic_top": [
+   0.5169,
+   -0.3215,
+   0.8708
+  ],
+  "vent": [
+   -0.5573,
+   -0.2966,
+   0.5535
+  ],
+  "head_centre": [
+   -0.0547,
+   -0.0136,
+   0.6009
+  ],
+  "driver": [
+   -0.012,
+   0.0738,
+   0.5494
+  ],
+  "driver_axis": [
+   0.3879,
+   0.7943,
+   -0.4676
+  ],
+  "battery": [
+   -0.1726,
+   -0.2551,
+   0.743
+  ],
+  "board": [
+   -0.3502,
+   -0.3505,
+   -0.7025
+  ],
+  "stem_centre": [
+   -0.3502,
+   -0.3505,
+   -0.7045
+  ],
+  "stem_tip": [
+   -0.3502,
+   -0.3505,
+   -1.326
+  ],
+  "bbox_min": [
+   -0.6086,
+   -0.7728,
+   -1.326
+  ],
+  "bbox_max": [
+   0.5208,
+   0.7728,
+   1.326
+  ]
+ },
+ "labels": {
+  "Antenna_L": "Bluetooth antenna",
+  "Antenna_R": "Bluetooth antenna",
+  "Battery_L": "Battery cell",
+  "Battery_R": "Battery cell",
+  "Component_00_L": "Passive components",
+  "Component_00_R": "Passive components",
+  "Component_01_L": "Passive components",
+  "Component_01_R": "Passive components",
+  "Contact_0_L": "Charging contact",
+  "Contact_0_R": "Charging contact",
+  "Contact_1_L": "Charging contact",
+  "Contact_1_R": "Charging contact",
+  "Driver_Basket_L": "Speaker driver",
+  "Driver_Basket_R": "Speaker driver",
+  "Driver_Diaphragm_L": "Diaphragm",
+  "Driver_Diaphragm_R": "Diaphragm",
+  "Driver_Dome_L": "Dust dome",
+  "Driver_Dome_R": "Dust dome",
+  "Driver_Magnet_L": "Neodymium magnet",
+  "Driver_Magnet_R": "Neodymium magnet",
+  "Driver_VoiceCoil_L": "Voice coil",
+  "Driver_VoiceCoil_R": "Voice coil",
+  "GrilleSpeaker_L": "Speaker mesh",
+  "GrilleSpeaker_R": "Speaker mesh",
+  "Logic_Board_L": "Logic board",
+  "Logic_Board_R": "Logic board",
+  "Mic_Bottom_L": "Voice microphone",
+  "Mic_Bottom_R": "Voice microphone",
+  "Mic_Top_L": "Beamforming microphone",
+  "Mic_Top_R": "Beamforming microphone",
+  "MicPortTop_L": "Microphone port",
+  "MicPortTop_R": "Microphone port",
+  "Sensor_Skin_L": "Skin-detect sensor",
+  "Sensor_Skin_R": "Skin-detect sensor",
+  "Shell_L": "Enclosure",
+  "Shell_R": "Enclosure",
+  "SoC_L": "Wireless chip",
+  "SoC_R": "Wireless chip",
+  "Spout_L": "Acoustic spout",
+  "Spout_R": "Acoustic spout",
+  "VentBack_L": "Pressure vent",
+  "VentBack_R": "Pressure vent"
+ },
+ "tris": {
+  "Antenna_L": 12,
+  "Antenna_R": 12,
+  "Battery_L": 1276,
+  "Battery_R": 1276,
+  "Component_00_L": 108,
+  "Component_00_R": 108,
+  "Component_01_L": 108,
+  "Component_01_R": 108,
+  "Contact_0_L": 764,
+  "Contact_0_R": 764,
+  "Contact_1_L": 764,
+  "Contact_1_R": 764,
+  "Driver_Basket_L": 1020,
+  "Driver_Basket_R": 1020,
+  "Driver_Diaphragm_L": 252,
+  "Driver_Diaphragm_R": 252,
+  "Driver_Dome_L": 2208,
+  "Driver_Dome_R": 2208,
+  "Driver_Magnet_L": 764,
+  "Driver_Magnet_R": 764,
+  "Driver_VoiceCoil_L": 1568,
+  "Driver_VoiceCoil_R": 1568,
+  "GrilleSpeaker_L": 2048,
+  "GrilleSpeaker_R": 2048,
+  "Logic_Board_L": 108,
+  "Logic_Board_R": 108,
+  "Mic_Bottom_L": 380,
+  "Mic_Bottom_R": 380,
+  "Mic_Top_L": 380,
+  "Mic_Top_R": 380,
+  "MicPortTop_L": 1152,
+  "MicPortTop_R": 1152,
+  "Sensor_Skin_L": 960,
+  "Sensor_Skin_R": 960,
+  "Shell_L": 65976,
+  "Shell_R": 65998,
+  "SoC_L": 108,
+  "SoC_R": 108,
+  "Spout_L": 27996,
+  "Spout_R": 27999,
+  "VentBack_L": 5068,
+  "VentBack_R": 5068
+ }
+}
