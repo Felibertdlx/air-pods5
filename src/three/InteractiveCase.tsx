@@ -4,7 +4,7 @@ import type { ThreeEvent } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import type { Mesh, MeshPhysicalMaterial, Object3D } from 'three'
 import { engine } from '../audio/engine'
-import { CASE, CASE_SCALE, POD_SCALE, SEAT_Y } from './anatomy'
+import { CASE, CASE_SCALE, POD_SCALE, POD_SEAT_TRIM, SEAT_Y } from './anatomy'
 import { dressModel } from './materials'
 
 /**
@@ -178,7 +178,7 @@ export function InteractiveCase({ onHotspot, hi }: InteractiveCaseProps) {
     for (const side of ['L', 'R'] as const) {
       const g = nodes[side]
       const sign = side === 'L' ? -1 : 1
-      const seatX = sign * CASE.wellHalfX
+      const seatX = sign * (CASE.wellHalfX - POD_SEAT_TRIM)
       const seatY = SEAT_Y
       const freeY = seatY + 3.4
       const freeX = seatX * 1.7

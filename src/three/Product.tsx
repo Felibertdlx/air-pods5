@@ -13,7 +13,7 @@ import {
 } from 'three'
 import type { Profile } from '../lib/quality'
 import { useStore } from '../state/store'
-import { CASE, CASE_SCALE, POD_SCALE, SEAT_Y } from './anatomy'
+import { CASE, CASE_SCALE, POD_SCALE, POD_SEAT_TRIM, SEAT_Y } from './anatomy'
 import { applyExplode, buildParts, type Part } from './explode'
 import { dressModel, setClip, setXray } from './materials'
 import { intro, read } from './signal'
@@ -167,7 +167,7 @@ export function Product({ profile, orbit, children }: Props) {
       seatE.set(s.caseRot[0], s.caseRot[1], s.caseRot[2])
       seatQ.setFromEuler(seatE)
       seatP
-        .set(sign * CASE.wellHalfX, SEAT_Y, 0)
+        .set(sign * (CASE.wellHalfX - POD_SEAT_TRIM), SEAT_Y, 0)
         .applyQuaternion(seatQ)
         .add(cg.position)
 

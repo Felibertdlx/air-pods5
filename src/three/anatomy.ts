@@ -75,6 +75,18 @@ export const CASE = {
 }
 
 /**
+ * The bud mesh's own geometric centre sits ~0.03cm off its object origin —
+ * measured from the world-space bounding box of the seated left and right
+ * buds, which should be mirror images of each other and aren't quite.
+ * Positioning both from `sign * wellHalfX` therefore pushes the left bud's
+ * shell that much further past its well's wall than the right one, which is
+ * what read as the left bud visibly overhanging the case. Trimming both
+ * seat positions inward by this amount is a placement fix for a modelling
+ * asymmetry, not a claim that the wells themselves are off-centre.
+ */
+export const POD_SEAT_TRIM = 0.08
+
+/**
  * Where a bud sits when it is stowed. The stem tip lands on the well floor,
  * so the offset follows from the bud's own geometry rather than from taste.
  */
