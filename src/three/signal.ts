@@ -23,6 +23,24 @@ export const clock = {
 let snapNext = false
 
 /**
+ * The opening beat: a couple of seconds before the scroll timeline is the
+ * thing in charge. Written once a frame by the rig — the only thing driving
+ * the camera — and read by the studio for the matching light fade-in, so the
+ * two halves of the reveal share one clock instead of drifting apart.
+ */
+export const INTRO_SECONDS = 2.3
+export const intro = { ease: 1 }
+
+function smoothstep(t: number) {
+  return t * t * (3 - 2 * t)
+}
+
+/** `elapsed` is time since the canvas mounted; `skip` is reduced-motion. */
+export function updateIntro(elapsed: number, skip: boolean) {
+  intro.ease = skip ? 1 : smoothstep(Math.min(1, elapsed / INTRO_SECONDS))
+}
+
+/**
  * Cut, don't travel.
  *
  * Jumping the scrollbar — replaying from the start, or following a section

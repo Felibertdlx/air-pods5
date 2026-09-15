@@ -1,10 +1,10 @@
 import { Environment, Lightformer } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useRef } from 'react'
-import type { DirectionalLight, Group } from 'three'
+import type { AmbientLight, DirectionalLight, Group } from 'three'
 import type { Profile } from '../lib/quality'
 import type { Theme } from '../state/store'
-import { read } from './signal'
+import { intro, read } from './signal'
 
 /**
  * A five-light product rig, plus an environment built from emissive panels
@@ -24,6 +24,7 @@ export function Studio({ profile, theme }: Props) {
   const rim = useRef<DirectionalLight>(null)
   const fill = useRef<DirectionalLight>(null)
   const top = useRef<DirectionalLight>(null)
+  const amb = useRef<AmbientLight>(null)
 
   const dark = theme === 'dark'
 
@@ -42,7 +43,11 @@ export function Studio({ profile, theme }: Props) {
     // directionals on top of that is what turns it into a featureless blob.
     // Dark is not "the same scene turned down" — it is a black room with
     // harder sources, so the product stays the brightest thing in frame.
-    const e = s.exposure
+    // The opening beat fades the rig in from dark rather than the product
+    // simply appearing lit — everything below already scales off `e`, so
+    // folding the intro in here is the one place it needs to happen.
+    const e = s.exposure * intro.ease
+    if (amb.current) amb.current.intensity = (dark ? 0.04 : 0.07) * intro.ease
     if (key.current) key.current.intensity = (dark ? 1.5 : 2.5) * e
     // Fill and ambient are what flatten a white product. Kept low on purpose:
     // the shadow side is allowed to go genuinely dark, which is where the
@@ -56,7 +61,7 @@ export function Studio({ profile, theme }: Props) {
 
   return (
     <>
-      <ambientLight intensity={dark ? 0.04 : 0.07} />
+      <ambientLight ref={amb} intensity={dark ? 0.04 : 0.07} />
 
       <group ref={rig}>
         {/* Key — high and to the left, the one that shapes the form */}

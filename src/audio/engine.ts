@@ -348,6 +348,69 @@ export class Engine {
     window.setTimeout(() => this.click(up ? 2400 : 1500, up ? 0.1 : 0.16, 0.12), 210)
   }
 
+  /**
+   * The extraction score: the harmonic bed lifted an octave and pushed
+   * forward, timed to the same crossing that triggers `lift`. Builds while
+   * the buds are actually rising, peaks as they reach height, then breathes
+   * back down to the ambient pad level rather than staying lifted for the
+   * rest of the piece — a moment, not a new resting state.
+   */
+  private swell() {
+    const ctx = this.ctx
+    if (!ctx || !this.master || !this.wet) return
+    const t = ctx.currentTime
+    const notes = CHORDS[Math.max(0, this.chord)].notes
+
+    const filt = ctx.createBiquadFilter()
+    filt.type = 'lowpass'
+    filt.Q.value = 0.5
+    filt.frequency.setValueAtTime(450, t)
+    filt.frequency.exponentialRampToValueAtTime(2600, t + 1.05)
+    filt.frequency.exponentialRampToValueAtTime(650, t + 3.7)
+
+    const g = ctx.createGain()
+    g.gain.setValueAtTime(0.0001, t)
+    // building, while they rise
+    g.gain.exponentialRampToValueAtTime(0.17, t + 1.05)
+    // the peak, held just long enough to register as an arrival
+    g.gain.setTargetAtTime(0.17, t + 1.05, 0.12)
+    // a small breath, then a clean release back to silence — the pad
+    // underneath is what carries on, not this
+    g.gain.setValueAtTime(0.17, t + 1.35)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 4.0)
+    filt.connect(g)
+    g.connect(this.master)
+    g.connect(this.wet)
+
+    const levels = [0.5, 0.4, 0.28, 0.18]
+    const voices: OscillatorNode[] = []
+    notes.forEach((freq, i) => {
+      const o = ctx.createOscillator()
+      o.type = i < 2 ? 'sine' : 'triangle'
+      // an octave above the resting pad — the lift needs to read as a
+      // register change, not just a volume change
+      o.frequency.value = freq * 2
+      const og = ctx.createGain()
+      og.gain.value = levels[i] ?? 0.2
+      o.connect(og).connect(filt)
+      o.start(t)
+      o.stop(t + 4.1)
+      voices.push(o)
+    })
+
+    // felt more than heard, right under the peak
+    const subO = ctx.createOscillator()
+    subO.type = 'sine'
+    subO.frequency.value = notes[0] / 2
+    const subG = ctx.createGain()
+    subG.gain.setValueAtTime(0, t)
+    subG.gain.linearRampToValueAtTime(0.13, t + 1.0)
+    subG.gain.exponentialRampToValueAtTime(0.0001, t + 2.0)
+    subO.connect(subG).connect(this.master)
+    subO.start(t)
+    subO.stop(t + 2.1)
+  }
+
   /** A soft rising breath as the buds leave, or settle as they return. */
   private lift(up: boolean) {
     const ctx = this.ctx
@@ -437,7 +500,8 @@ export class Engine {
     // ---- levels ----------------------------------------------------------
     const speed = Math.min(1, Math.abs(clock.velocity) * 26)
 
-    this.set(this.bed, 0.06)
+    // Kept close to inaudible — a sense of room, not a permanent hiss.
+    this.set(this.bed, 0.016)
     this.set(this.air, 0.015 + speed * 0.055, 0.22)
     if (this.airFilter) {
       // faster camera, brighter air
@@ -476,7 +540,10 @@ export class Engine {
     if (s.lid < 0.94 && this.lastLid >= 0.94) this.hinge(false)
     this.lastLid = s.lid
 
-    if (s.podsOut > 0.04 && this.lastOut <= 0.04) this.lift(true)
+    if (s.podsOut > 0.04 && this.lastOut <= 0.04) {
+      this.lift(true)
+      this.swell()
+    }
     if (s.podsOut < 0.96 && this.lastOut >= 0.96) this.lift(false)
     this.lastOut = s.podsOut
 

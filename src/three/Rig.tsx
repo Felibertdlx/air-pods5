@@ -2,8 +2,8 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useRef } from 'react'
 import { MathUtils, PerspectiveCamera, Vector3 } from 'three'
 import { viewportFit } from '../lib/quality'
-import { scroll } from '../state/store'
-import { advance, clock } from './signal'
+import { scroll, useStore } from '../state/store'
+import { advance, clock, intro, updateIntro } from './signal'
 
 /**
  * The only thing that moves the camera.
@@ -32,19 +32,30 @@ const spherical = { r: 0, theta: 0, phi: 0 }
 const PULL_BACK = 1.3
 /** Safety only — stops a shot landing exactly on a surface. */
 const MIN_RADIUS = 0.3
+/**
+ * The opening beat starts a touch further back than the shot itself calls
+ * for, and settles in over `INTRO_SECONDS` — "the camera is slightly further
+ * away, then arrives" rather than the product simply appearing at its final
+ * distance.
+ */
+const INTRO_PULL = 1.22
+/** Small azimuthal drift that resolves to zero as the intro settles. */
+const INTRO_DRIFT = 0.09
 
 export function Rig({ orbit }: Props) {
   const { camera, size } = useThree()
   const fit = useRef(viewportFit(1))
   const started = useRef(false)
+  const reduced = useStore((s) => s.reducedMotion)
 
   useEffect(() => {
     fit.current = viewportFit(size.width / size.height)
   }, [size.width, size.height])
 
-  useFrame((_, dtRaw) => {
+  useFrame((state, dtRaw) => {
     const dt = Math.min(dtRaw, 1 / 20)
     clock.target = scroll.t
+    updateIntro(state.clock.elapsedTime, reduced)
 
     // On the first frame, snap rather than sweeping in from the default pose.
     if (!started.current) {
@@ -65,11 +76,12 @@ export function Rig({ orbit }: Props) {
     spherical.theta = Math.atan2(offset.x, offset.z)
     spherical.phi = Math.acos(MathUtils.clamp(offset.y / spherical.r, -1, 1))
 
-    spherical.theta += orbit.az
+    spherical.theta += orbit.az + (1 - intro.ease) * INTRO_DRIFT
     spherical.phi = MathUtils.clamp(spherical.phi - orbit.pol, 0.12, Math.PI - 0.12)
+    const introPull = MathUtils.lerp(INTRO_PULL, 1, intro.ease)
     spherical.r = Math.max(
       MIN_RADIUS,
-      spherical.r * PULL_BACK * fit.current.dolly * orbit.dolly,
+      spherical.r * PULL_BACK * introPull * fit.current.dolly * orbit.dolly,
     )
 
     const sinPhi = Math.sin(spherical.phi)

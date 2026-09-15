@@ -63,7 +63,11 @@ export const CASE = {
   size: new Vector3(50.1, 46.19, 21.19).multiplyScalar(CASE_SCALE),
   /** Lid hinge, in case-root space. */
   hinge: fromBlender([0, -9.4, 9.7942], CASE_SCALE),
-  openRad: (58 * Math.PI) / 180,
+  // 58° left the lid's front edge hanging over the wells — not enough
+  // clearance for the buds to rise without visually grazing it. A real
+  // case's lid swings back past vertical; 104° puts the open lid's edge
+  // well clear of the column the buds actually travel through.
+  openRad: (104 * Math.PI) / 180,
   /** Floor of the moulded wells, in case-root space (y). */
   wellFloorY: -21.4 * CASE_SCALE,
   /** Half-distance between the two wells along x. */

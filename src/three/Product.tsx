@@ -83,6 +83,10 @@ export function Product({ profile, orbit, children }: Props) {
   const fxGroup = useRef<Group>(null)
   const spin = useRef(0)
   const warm = useRef(0)
+  /** Lid angle as a lightly underdamped spring, not a direct assignment — a
+   * hinge has mass. Tuned just shy of critical so the lid overshoots its
+   * target by a fraction of a degree and settles, instead of stopping dead. */
+  const lid = useRef({ pos: 0, vel: 0 })
 
   useEffect(() => {
     nodes.L.scale.setScalar(POD_SCALE)
@@ -120,8 +124,18 @@ export function Product({ profile, orbit, children }: Props) {
       cg.updateMatrixWorld(true)
     }
     // The lid's origin already sits on the hinge axis in the source file, so
-    // opening it is a single rotation rather than a rig.
-    nodes.lid.rotation.x = s.lid * CASE.openRad
+    // opening it is a single rotation — but driven through a spring rather
+    // than set directly, so the hinge carries a touch of mechanical weight.
+    {
+      const target = s.lid * CASE.openRad
+      const l = lid.current
+      const stiffness = 140
+      const damping = 15.5
+      const accel = (target - l.pos) * stiffness - l.vel * damping
+      l.vel += accel * dt
+      l.pos += l.vel * dt
+      nodes.lid.rotation.x = l.pos
+    }
 
     // ---- earbuds: blend between stowed and free ---------------------------
     spin.current += dt * 0.12 * s.spin
