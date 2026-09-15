@@ -278,12 +278,15 @@ export class Engine {
   /**
    * A click: a transient, so it is drawn each time rather than looped.
    *
-   * This used to be pure bandpassed noise, which is why it read as a soft
-   * pop rather than a click — noise has no pitch to catch the ear. A real
-   * mechanism click has two parts: a short pitched body (the part that
-   * makes it a *note*, not a thump) and a brief broadband snap on top of it
-   * (the part that makes it sound hard rather than plucked). Both, together,
-   * are what a keyboard or a shutter actually sounds like.
+   * First attempt used a 2ms linear ramp into a pitched tone — technically a
+   * "click", but a ramped attack rolls off exactly the high-frequency energy
+   * that makes a click read as hard rather than soft, and it was still
+   * getting lost against the hinge sweep and the pad. This version leads
+   * with a genuinely broadband, zero-ramp noise impact (the actual "snap" a
+   * mechanism makes), with the pitched body now riding underneath it for
+   * colour rather than carrying the transient itself. Gains are
+   * substantially hotter — these are rare, brief events, not a sustained
+   * level, so there is no reason to keep them polite.
    */
   private click(freq: number, gain: number, decay: number, pan = 0) {
     const ctx = this.ctx
@@ -295,32 +298,33 @@ export class Engine {
     p.connect(this.master)
     p.connect(this.wet)
 
-    // The body: a short pitched tone, falling slightly as it decays — the
-    // same shape a struck object makes.
+    // The impact: wideband noise with a hard, un-ramped onset and a fast
+    // exponential fall — this is the part an ear actually catches as
+    // "click", regardless of what pitch anything else in the mix is at.
+    const snap = Math.max(0.02, Math.min(0.045, decay * 0.5))
+    const src = this.loopSource(ctx, 3.2)
+    const hp = ctx.createBiquadFilter()
+    hp.type = 'highpass'
+    hp.frequency.value = Math.max(1200, freq * 0.8)
+    const ng = ctx.createGain()
+    ng.gain.setValueAtTime(gain * 1.5, t)
+    ng.gain.exponentialRampToValueAtTime(0.0001, t + snap)
+    src.connect(hp).connect(ng).connect(p)
+    src.stop(t + snap + 0.05)
+
+    // The body: a short pitched tone under the snap, falling slightly as it
+    // decays — gives the click a material (plastic, metal) rather than
+    // leaving it as pure noise.
     const osc = ctx.createOscillator()
     osc.type = 'triangle'
     osc.frequency.setValueAtTime(freq, t)
     osc.frequency.exponentialRampToValueAtTime(freq * 0.7, t + decay)
     const og = ctx.createGain()
-    og.gain.setValueAtTime(0, t)
-    og.gain.linearRampToValueAtTime(gain, t + 0.002)
+    og.gain.setValueAtTime(gain, t)
     og.gain.exponentialRampToValueAtTime(0.0001, t + decay)
     osc.connect(og).connect(p)
     osc.start(t)
     osc.stop(t + decay + 0.02)
-
-    // The snap: a few milliseconds of high-passed noise right at the
-    // attack — this is what separates a "click" from a "pluck".
-    const snap = Math.min(0.018, decay * 0.3)
-    const src = this.loopSource(ctx, 2.6)
-    const hp = ctx.createBiquadFilter()
-    hp.type = 'highpass'
-    hp.frequency.value = freq * 1.6
-    const ng = ctx.createGain()
-    ng.gain.setValueAtTime(gain * 0.7, t)
-    ng.gain.exponentialRampToValueAtTime(0.0001, t + snap)
-    src.connect(hp).connect(ng).connect(p)
-    src.stop(t + snap + 0.05)
   }
 
   /** The hinge: a short friction sweep before the latch lands. */
@@ -347,7 +351,7 @@ export class Engine {
     src.stop(t + 0.4)
 
     // the latch, a beat after the friction
-    window.setTimeout(() => this.click(up ? 2400 : 1500, up ? 0.15 : 0.18, 0.1), 210)
+    window.setTimeout(() => this.click(up ? 2400 : 1500, up ? 0.22 : 0.26, 0.11), 210)
   }
 
   /**
@@ -453,8 +457,8 @@ export class Engine {
     osc.frequency.value = 1100 + Math.random() * 900
     const g = ctx.createGain()
     g.gain.setValueAtTime(0, t)
-    g.gain.linearRampToValueAtTime(0.022, t + 0.006)
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18)
+    g.gain.linearRampToValueAtTime(0.012, t + 0.006)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16)
     const p = ctx.createStereoPanner()
     p.pan.value = Math.random() * 1.4 - 0.7
     osc.connect(g).connect(p)
@@ -502,9 +506,9 @@ export class Engine {
     // ---- levels ----------------------------------------------------------
     const speed = Math.min(1, Math.abs(clock.velocity) * 26)
 
-    // Silent at rest — audible only as the camera actually moves, so
-    // nothing is playing when nothing on screen is happening.
-    this.set(this.air, 0.004 + speed * 0.05, 0.22)
+    // Silent at rest — audible only as the camera actually moves, and kept
+    // low even then: a hint of air, not wind.
+    this.set(this.air, 0.003 + speed * 0.028, 0.22)
     if (this.airFilter) {
       // faster camera, brighter air
       this.airFilter.frequency.setTargetAtTime(560 + speed * 1500, t, 0.25)
@@ -554,7 +558,7 @@ export class Engine {
     this.lastPress = intro.press
 
     // Blips, while data is moving. Rate follows the channel, not a metronome.
-    if (s.fxData > 0.15 && t - this.lastBlip > 0.09 + (1 - s.fxData) * 0.5) {
+    if (s.fxData > 0.15 && t - this.lastBlip > 0.16 + (1 - s.fxData) * 0.7) {
       this.lastBlip = t
       this.blip()
     }
