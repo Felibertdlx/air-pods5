@@ -16,7 +16,7 @@ import { useStore } from '../state/store'
 import { CASE, CASE_SCALE, POD_SCALE, SEAT_Y } from './anatomy'
 import { applyExplode, buildParts, type Part } from './explode'
 import { dressModel, setClip, setXray } from './materials'
-import { read } from './signal'
+import { intro, read } from './signal'
 
 const POD_URL = '/models/pods.glb'
 const CASE_URL = '/models/case.glb'
@@ -66,6 +66,7 @@ export function Product({ profile, orbit, children }: Props) {
       R: pod.getObjectByName('Pod_R') as Object3D,
       lid: kase.getObjectByName('Boitier_Couvercle') as Object3D,
       insert: kase.getObjectByName('Boitier_Logement') as Mesh,
+      button: kase.getObjectByName('Boitier_Bouton') as Object3D,
     }
     return {
       podScene: pod,
@@ -87,10 +88,14 @@ export function Product({ profile, orbit, children }: Props) {
    * hinge has mass. Tuned just shy of critical so the lid overshoots its
    * target by a fraction of a degree and settles, instead of stopping dead. */
   const lid = useRef({ pos: 0, vel: 0 })
+  /** The button's resting depth, captured once so the press offset is
+   * relative rather than an assumption about the source file's origin. */
+  const btnRestZ = useRef(0)
 
   useEffect(() => {
     nodes.L.scale.setScalar(POD_SCALE)
     nodes.R.scale.setScalar(POD_SCALE)
+    btnRestZ.current = nodes.button.position.z
     setLoaded(true)
     if (import.meta.env.DEV) {
       Object.assign(window, { skins, podScene, caseScene, nodes })
@@ -215,9 +220,13 @@ export function Product({ profile, orbit, children }: Props) {
     camera.getWorldDirection(camDir)
     setClip(skins.pods, s.clip, camera.position, camDir)
 
+    // The one press in the opening beat — a real mechanical travel on the
+    // real button mesh, not a texture swap.
+    nodes.button.position.z = btnRestZ.current - intro.press * 0.4
+
     if (skins.case.led) {
       skins.case.led.emissiveIntensity =
-        1.6 + Math.sin(t * 0.8) * 0.25 + s.fxEnergy * 2.6
+        1.6 + Math.sin(t * 0.8) * 0.25 + s.fxEnergy * 2.6 + intro.press * 1.4
     }
     for (const m of skins.pods.internals) {
       m.envMapIntensity = MathUtils.lerp(0.45, 1.05, s.xray)

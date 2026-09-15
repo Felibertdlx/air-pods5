@@ -47,6 +47,12 @@ export function Rig({ orbit }: Props) {
   const fit = useRef(viewportFit(1))
   const started = useRef(false)
   const reduced = useStore((s) => s.reducedMotion)
+  const entered = useStore((s) => s.entered)
+  // The intro clock starts when the loader curtain actually lifts, not when
+  // the canvas mounts — loading time is network-dependent, and the reveal
+  // has to begin when the product is first visible, not some variable delay
+  // before that.
+  const enterAt = useRef<number | null>(null)
 
   useEffect(() => {
     fit.current = viewportFit(size.width / size.height)
@@ -55,7 +61,9 @@ export function Rig({ orbit }: Props) {
   useFrame((state, dtRaw) => {
     const dt = Math.min(dtRaw, 1 / 20)
     clock.target = scroll.t
-    updateIntro(state.clock.elapsedTime, reduced)
+    if (entered && enterAt.current === null) enterAt.current = state.clock.elapsedTime
+    const introElapsed = enterAt.current === null ? 0 : state.clock.elapsedTime - enterAt.current
+    updateIntro(introElapsed, reduced)
 
     // On the first frame, snap rather than sweeping in from the default pose.
     if (!started.current) {

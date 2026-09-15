@@ -29,15 +29,35 @@ let snapNext = false
  * two halves of the reveal share one clock instead of drifting apart.
  */
 export const INTRO_SECONDS = 2.3
-export const intro = { ease: 1 }
+/** When, in the intro, the case gets its one press — after the reveal has
+ * mostly settled, before scroll is expected to have started. */
+const PRESS_AT = 1.7
+const PRESS_HALF = 0.16
+export const intro = { ease: 1, press: 0 }
 
 function smoothstep(t: number) {
   return t * t * (3 - 2 * t)
 }
 
+/** A short symmetric rise-and-fall, 0 → 1 → 0, centred on `center`. */
+function bump(elapsed: number, center: number, half: number) {
+  const d = Math.abs(elapsed - center)
+  if (d > half) return 0
+  return smoothstep(1 - d / half)
+}
+
+let pressOverride: number | null = null
+
 /** `elapsed` is time since the canvas mounted; `skip` is reduced-motion. */
 export function updateIntro(elapsed: number, skip: boolean) {
   intro.ease = skip ? 1 : smoothstep(Math.min(1, elapsed / INTRO_SECONDS))
+  intro.press = pressOverride ?? (skip ? 0 : bump(elapsed, PRESS_AT, PRESS_HALF))
+}
+
+if (import.meta.env.DEV) {
+  ;(window as unknown as { forcePress: (v: number | null) => void }).forcePress = (v) => {
+    pressOverride = v
+  }
 }
 
 /**
@@ -79,4 +99,5 @@ if (import.meta.env.DEV) {
   ;(window as unknown as { snap: () => void }).snap = () => {
     clock.t = clock.target
   }
+  Object.assign(window, { introSignal: intro })
 }

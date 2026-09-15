@@ -1,4 +1,4 @@
-import { clock, read } from '../three/signal'
+import { clock, intro, read } from '../three/signal'
 
 /**
  * The sound of the piece, synthesised rather than downloaded.
@@ -66,6 +66,7 @@ export class Engine {
   private lastLid = 0
   private lastOut = 0
   private lastBlip = 0
+  private lastPress = 0
   private raf = 0
   private started = false
 
@@ -546,6 +547,10 @@ export class Engine {
     }
     if (s.podsOut < 0.96 && this.lastOut >= 0.96) this.lift(false)
     this.lastOut = s.podsOut
+
+    // The one button press in the opening beat.
+    if (intro.press > 0.85 && this.lastPress <= 0.85) this.click(2100, 0.085, 0.07)
+    this.lastPress = intro.press
 
     // Blips, while data is moving. Rate follows the channel, not a metronome.
     if (s.fxData > 0.15 && t - this.lastBlip > 0.09 + (1 - s.fxData) * 0.5) {
