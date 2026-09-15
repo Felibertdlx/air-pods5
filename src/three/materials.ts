@@ -182,14 +182,17 @@ export function dressModel(root: Object3D, hi: boolean): Skin {
       return
     }
 
-    // The four charging contacts — real gold, not the source file's default
-    // silver, matching the copy ("quatre contacts dorés") and giving the
-    // wells something for the eye to land on, the way the real case's do.
+    // The four charging contacts. Tried real gold here, matching the copy
+    // ("quatre contacts dorés") — but at the seam between the lid and body
+    // there's a sliver where a contact reads as poking through the outer
+    // shell, and gold is exactly saturated enough to make that obvious
+    // where the stock silver used to hide it. Reverted until that seam gap
+    // itself is fixed; a small metalness/roughness bump only, still under
+    // the shell's own colour so it doesn't stand out from the outside.
     if (mat?.name === 'M_Contact') {
-      mat.color.set('#d4af6a')
       if ('metalness' in mat) (mat as MeshStandardMaterial).metalness = 1
       if ('roughness' in mat) (mat as MeshStandardMaterial).roughness = 0.32
-      mat.envMapIntensity = 1.4
+      mat.envMapIntensity = 1.1
       skin.internals.push(mat)
       return
     }
