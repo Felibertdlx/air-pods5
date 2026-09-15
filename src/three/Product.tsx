@@ -5,6 +5,7 @@ import {
   Euler,
   Group,
   MathUtils,
+  Matrix4,
   Mesh,
   MeshPhysicalMaterial,
   Object3D,
@@ -36,12 +37,31 @@ interface Props {
 
 const seatP = new Vector3()
 const seatQ = new Quaternion()
+const seatQR = new Quaternion()
 const freeP = new Vector3()
 const freeQ = new Quaternion()
+const freeQR = new Quaternion()
 const freeE = new Euler()
 const seatE = new Euler()
 const camDir = new Vector3()
 const away = new Vector3()
+const mirrorScale = new Matrix4().makeScale(-1, 1, 1)
+const mirrorM = new Matrix4()
+
+/**
+ * The right bud's mesh is a true mirror of the left one (see
+ * anatomy.mirrorForRight), so giving both buds the *same* rotation doesn't
+ * make them mirror images — it makes the right one's face point wherever the
+ * left one's does, rather than toward it. Reflecting the rotation itself
+ * (conjugating through a −X scale, S·R·S — a standard mirror-of-a-rotation)
+ * is what actually makes the pair face each other, speaker to speaker,
+ * whether seated or floating free.
+ */
+function mirrorRotationX(q: Quaternion, out: Quaternion): Quaternion {
+  mirrorM.makeRotationFromQuaternion(q)
+  mirrorM.premultiply(mirrorScale).multiply(mirrorScale)
+  return out.setFromRotationMatrix(mirrorM)
+}
 
 export function Product({ profile, orbit, children }: Props) {
   const podGltf = useGLTF(POD_URL, DRACO)
@@ -146,6 +166,7 @@ export function Product({ profile, orbit, children }: Props) {
     spin.current += dt * 0.12 * s.spin
     freeE.set(s.podRot[0] + orbit.pol, s.podRot[1] + spin.current + orbit.az, s.podRot[2])
     freeQ.setFromEuler(freeE)
+    mirrorRotationX(freeQ, freeQR)
 
     for (const side of ['L', 'R'] as const) {
       const g = nodes[side]
@@ -185,7 +206,12 @@ export function Product({ profile, orbit, children }: Props) {
       freeP.y += Math.sin(t * 0.34 + (side === 'L' ? 0 : 1.9)) * 0.04 * s.podsOut
 
       g.position.lerpVectors(seatP, freeP, s.podsOut)
-      g.quaternion.copy(seatQ).slerp(freeQ, s.podsOut)
+      if (side === 'R') {
+        mirrorRotationX(seatQ, seatQR)
+        g.quaternion.copy(seatQR).slerp(freeQR, s.podsOut)
+      } else {
+        g.quaternion.copy(seatQ).slerp(freeQ, s.podsOut)
+      }
       if (side === 'R') g.visible = s.solo < 0.995
 
       applyExplode(
