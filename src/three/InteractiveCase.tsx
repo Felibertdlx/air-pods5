@@ -10,6 +10,7 @@ import {
   POD_SCALE,
   POD_SEAT_TRIM,
   SEAT_Y,
+  SEAT_YAW,
 } from './anatomy'
 import { dressModel } from './materials'
 
@@ -184,6 +185,8 @@ export function InteractiveCase({ onHotspot, hi }: InteractiveCaseProps) {
     for (const side of ['L', 'R'] as const) {
       const g = nodes[side]
       const sign = side === 'L' ? -1 : 1
+      // Turned to face the centre while stowed, unwinding as it lifts out.
+      const yaw = SEAT_YAW[side]
       const seatX = sign * (CASE.wellHalfX - POD_SEAT_TRIM)
       const seatY = SEAT_Y
       const freeY = seatY + 3.4
@@ -194,7 +197,7 @@ export function InteractiveCase({ onHotspot, hi }: InteractiveCaseProps) {
         seatY + (freeY - seatY) * t + Math.sin(bob.current * 0.9 + (side === 'L' ? 0 : 1.7)) * 0.05 * t,
         0,
       )
-      g.rotation.y = t * (side === 'L' ? -0.3 : 0.3)
+      g.rotation.y = yaw * (1 - t) + t * (side === 'L' ? -0.3 : 0.3)
     }
   })
 

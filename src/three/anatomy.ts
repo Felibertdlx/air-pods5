@@ -113,14 +113,11 @@ function heading(v: Vector3) {
  * (see mirrorForRight) — its axis starts from a different heading, so it
  * needs a different correction to end up pointing back at its partner.
  *
- * NOT APPLIED YET, on purpose. Turning the buds by this much inside the
- * wells they have now doesn't work: `build_well` in the case's own build
- * script lofts each well from a fixed profile — a nearly circular head
- * pocket over a 2.4 × 1.9 mm stem slot — moulded around the bud at zero
- * yaw. A bud is an L, so turning it either swings the head out of the
- * pocket or the stem out of the slot; both read as the buds sinking in
- * crooked and poking through the shell. The wells have to be re-lofted at
- * this same angle before the buds can be turned to match.
+ * The wells are lofted at these same two angles — `build_well` in the case's
+ * build script takes them as `yaw`. They have to stay in step: a bud is an L
+ * shape, so turning it inside a well moulded straight swings either the head
+ * out of the pocket or the stem out of its slot, and it reads as the buds
+ * sitting in crooked and poking through the shell.
  */
 export const SEAT_YAW = {
   L: Math.PI / 2 - heading(POD.axis),

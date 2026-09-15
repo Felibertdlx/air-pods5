@@ -19,6 +19,7 @@ import {
   POD_SCALE,
   POD_SEAT_TRIM,
   SEAT_Y,
+  SEAT_YAW,
 } from './anatomy'
 import { applyExplode, buildParts, type Part } from './explode'
 import { dressModel, setClip, setXray } from './materials'
@@ -42,12 +43,16 @@ interface Props {
 
 const seatP = new Vector3()
 const seatQ = new Quaternion()
+/** Case rotation, then the bud's own turn toward the centre of the case. */
+const seatQSide = new Quaternion()
+const seatYawQ = new Quaternion()
 const freeP = new Vector3()
 const freeQ = new Quaternion()
 const freeE = new Euler()
 const seatE = new Euler()
 const camDir = new Vector3()
 const away = new Vector3()
+const UP_AXIS = new Vector3(0, 1, 0)
 
 export function Product({ profile, orbit, children }: Props) {
   const podGltf = useGLTF(POD_URL, DRACO)
@@ -177,6 +182,12 @@ export function Product({ profile, orbit, children }: Props) {
         .applyQuaternion(seatQ)
         .add(cg.position)
 
+      // Stowed, a bud is turned so its speaker faces the centre of the case,
+      // the way a real pair sits. The wells are moulded at this same angle
+      // (anatomy.SEAT_YAW), so the two have to move together.
+      seatYawQ.setFromAxisAngle(UP_AXIS, SEAT_YAW[side])
+      seatQSide.copy(seatQ).multiply(seatYawQ)
+
       freeP.set(s.podPos[0] + sign * s.podSpread, s.podPos[1], s.podPos[2])
       if (side === 'R') {
         // The second bud withdraws straight away from the lens rather than
@@ -191,7 +202,7 @@ export function Product({ profile, orbit, children }: Props) {
       freeP.y += Math.sin(t * 0.34 + (side === 'L' ? 0 : 1.9)) * 0.04 * s.podsOut
 
       g.position.lerpVectors(seatP, freeP, s.podsOut)
-      g.quaternion.copy(seatQ).slerp(freeQ, s.podsOut)
+      g.quaternion.copy(seatQSide).slerp(freeQ, s.podsOut)
       if (side === 'R') g.visible = s.solo < 0.995
 
       applyExplode(

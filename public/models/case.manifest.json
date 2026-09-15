@@ -18,8 +18,8 @@
   0.0058
  ],
  "column_half_mm": [
-  7.514,
-  1.388
+  5.223,
+  1.474
  ],
  "labels": {
   "Boitier_Bouton": "Pairing button",
@@ -51,7 +51,7 @@
   "Boitier_Corps": 27610,
   "Boitier_Couvercle": 12718,
   "Boitier_LED": 1152,
-  "Boitier_Logement": 14474,
+  "Boitier_Logement": 14572,
   "Boitier_USBC_Fond": 2880,
   "Boitier_USBC_Languette": 2304,
   "Case_Battery": 1276,

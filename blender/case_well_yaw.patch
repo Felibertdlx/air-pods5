@@ -1,0 +1,53 @@
+--- "/c/Users/felib/Desktop/model 3d air pods/scripts/build_case.py"	2026-09-14 20:09:35.183057900 +0200
++++ /c/Users/felib/AppData/Local/Temp/claude/C--Users-felib-Desktop-air-pods/1f20d226-db75-486d-a5fd-8b478cbed8c8/scratchpad/casegen/scripts/build_case.py	2026-09-15 19:43:19.370867500 +0200
+@@ -89,16 +89,33 @@
+     return Vector((0.0, -RY - margin, z))
+ 
+ 
+-def build_well(name, x_center, mirror=False):
+-    """Cavite en forme d'ecouteur, tige vers le bas."""
++# Comment l'ecouteur est tourne dans son logement, en radians, autour de la
++# verticale passant par le centre du logement. Repris tel quel de SEAT_YAW
++# dans src/three/anatomy.ts du site : l'angle y est derive de l'axe mesure du
++# transducteur pour que le haut-parleur regarde le centre du boitier, comme
++# une vraie paire rangee. Une rotation autour de Z ici vaut exactement la
++# meme rotation autour de Y une fois le glTF converti en Y-up, donc les deux
++# valeurs doivent rester identiques.
++YAW_WELL_G = -1.1157   # logement gauche  (x = -X_BUD)
++YAW_WELL_D = -2.0259   # logement droit   (x = +X_BUD)
++
++
++def build_well(name, x_center, mirror=False, yaw=0.0):
++    """Cavite en forme d'ecouteur, tige vers le bas, tournee de `yaw`."""
+     rings = []
++    ca, sa = math.cos(yaw), math.sin(yaw)
+     for (z, cy, rx, ry, n) in WELL_PROFIL:
+         sx = -1.0 if mirror else 1.0
+-        rings.append(L.superellipse_ring(rx, ry, n, 72,
+-                                         cx=x_center, cy=cy * 1.0,
+-                                         h=z + Z_BUD_TIP))
++        ring = L.superellipse_ring(rx, ry, n, 72,
++                                   cx=x_center, cy=cy * 1.0,
++                                   h=z + Z_BUD_TIP)
+         if sx < 0:
+-            rings[-1] = [(2 * x_center - px, py, pz) for (px, py, pz) in rings[-1]]
++            ring = [(2 * x_center - px, py, pz) for (px, py, pz) in ring]
++        # Tourner apres le miroir : l'angle est donne dans le repere final.
++        ring = [(x_center + (px - x_center) * ca - py * sa,
++                 (px - x_center) * sa + py * ca,
++                 pz) for (px, py, pz) in ring]
++        rings.append(ring)
+     return L.make_loft(name, rings, cap_bottom=True, cap_top=True)
+ 
+ 
+@@ -217,8 +234,8 @@
+     print("== Logement des ecouteurs ==")
+     seat = build_shell("Boitier_Logement", IRX - 0.05, IRY - 0.05, IRZ - 0.05)
+     L.bisect(seat, (0, 0, Z_SEAT), (0, 0, 1), keep='LOWER')
+-    well_r = build_well("Outil_Logement_D", X_BUD, mirror=False)
+-    well_l = build_well("Outil_Logement_G", -X_BUD, mirror=True)
++    well_r = build_well("Outil_Logement_D", X_BUD, mirror=False, yaw=YAW_WELL_D)
++    well_l = build_well("Outil_Logement_G", -X_BUD, mirror=True, yaw=YAW_WELL_G)
+     L.boolean(seat, well_r, 'DIFFERENCE', apply=True, delete_cutter=True)
+     L.boolean(seat, well_l, 'DIFFERENCE', apply=True, delete_cutter=True)
+     L.assign(seat, mats['blanc_mat'])
