@@ -22,8 +22,8 @@ import {
   SEAT_YAW,
 } from './anatomy'
 import { applyExplode, buildParts, type Part } from './explode'
-import { dressModel, setClip, setXray } from './materials'
-import { intro, read } from './signal'
+import { dressModel, setClip, setEnvironment, setXray } from './materials'
+import { envLevel, intro, read } from './signal'
 
 const POD_URL = '/models/pods.glb'
 const CASE_URL = '/models/case.glb'
@@ -54,10 +54,31 @@ const camDir = new Vector3()
 const away = new Vector3()
 const UP_AXIS = new Vector3(0, 1, 0)
 
+/**
+ * The lid, as a hinge with mass.
+ *
+ * Written the way Apple parameterises a spring rather than as stiffness and
+ * damping: a response — roughly how long the move takes to arrive — and a
+ * damping ratio, where 1 settles without overshoot and anything below it
+ * bounces. A lid is a real hinged part being thrown open, so it gets the
+ * value Apple ships for rotation: a little under critical, enough that it
+ * passes its stop and comes back rather than parking on it.
+ *
+ * The previous pair worked out to a ratio of 0.66 — visibly springy, and
+ * described in the comment as "just shy of critical", which it was not.
+ */
+const LID_RESPONSE = 0.42
+const LID_DAMPING = 0.82
+const LID_OMEGA = (2 * Math.PI) / LID_RESPONSE
+const LID_K = LID_OMEGA * LID_OMEGA
+const LID_C = 2 * LID_DAMPING * LID_OMEGA
+/** Explicit integration goes unstable if a frame runs long; sub-step instead. */
+const LID_STEP = 1 / 120
+
 export function Product({ profile, orbit, children }: Props) {
   const podGltf = useGLTF(POD_URL, DRACO)
   const caseGltf = useGLTF(CASE_URL, DRACO)
-  const { camera } = useThree()
+  const { camera, scene } = useThree()
   const setLoaded = useStore((s) => s.setLoaded)
 
   // The loader caches one scene per URL, so each mount gets its own clone —
@@ -96,8 +117,7 @@ export function Product({ profile, orbit, children }: Props) {
   const spin = useRef(0)
   const warm = useRef(0)
   /** Lid angle as a lightly underdamped spring, not a direct assignment — a
-   * hinge has mass. Tuned just shy of critical so the lid overshoots its
-   * target by a fraction of a degree and settles, instead of stopping dead. */
+   * hinge has mass. See LID_RESPONSE above. */
   const lid = useRef({ pos: 0, vel: 0 })
   /** The button's resting depth, captured once so the press offset is
    * relative rather than an assumption about the source file's origin. */
@@ -113,9 +133,22 @@ export function Product({ profile, orbit, children }: Props) {
     }
   }, [nodes, skins, podScene, caseScene, setLoaded])
 
-  useFrame((state, dt) => {
+  useFrame((state, dtRaw) => {
     const s = read()
     const t = state.clock.elapsedTime
+    const dt = Math.min(dtRaw, 1 / 20)
+
+    // The studio, applied to the product.
+    //
+    // Both halves of this have to happen here rather than in Studio: the
+    // per-surface intensities are authored on these materials, and the
+    // environment's rotation now lives on them too — see
+    // materials.setEnvironment for why neither can be set scene-wide. Ahead
+    // of the warm-up return, because the reflections are most of the light on
+    // this product and it should not spend its first frames unlit.
+    const envGain = envLevel(s.exposure)
+    setEnvironment(skins.pods, scene.environment, envGain, s.lightAngle)
+    setEnvironment(skins.case, scene.environment, envGain, s.lightAngle)
 
     // Turning clipping on for the first time adds a define and forces a shader
     // recompile — a quarter-second stall, and it would land exactly on the shot
@@ -143,13 +176,18 @@ export function Product({ profile, orbit, children }: Props) {
     // opening it is a single rotation — but driven through a spring rather
     // than set directly, so the hinge carries a touch of mechanical weight.
     {
-      const target = s.lid * CASE.openRad
+      const goal = s.lid * CASE.openRad
       const l = lid.current
-      const stiffness = 140
-      const damping = 15.5
-      const accel = (target - l.pos) * stiffness - l.vel * damping
-      l.vel += accel * dt
-      l.pos += l.vel * dt
+      let remaining = dt
+      while (remaining > 1e-5) {
+        const h = Math.min(LID_STEP, remaining)
+        remaining -= h
+        // Semi-implicit: velocity first, then position from the new velocity.
+        // Explicit Euler adds energy every step, which on a spring this stiff
+        // is the difference between a hinge and a rattle.
+        l.vel += ((goal - l.pos) * LID_K - l.vel * LID_C) * h
+        l.pos += l.vel * h
+      }
       nodes.lid.rotation.x = l.pos
     }
 
@@ -157,6 +195,18 @@ export function Product({ profile, orbit, children }: Props) {
     spin.current += dt * 0.12 * s.spin
     freeE.set(s.podRot[0] + orbit.pol, s.podRot[1] + spin.current + orbit.az, s.podRot[2])
     freeQ.setFromEuler(freeE)
+
+    // Out of the well before across the frame.
+    //
+    // One blend parameter for all three axes draws a straight diagonal from
+    // the seat to the hover pose, which is the one path a hand could not take:
+    // it starts moving sideways while the bud is still down inside its
+    // moulded pocket. Letting the vertical lead — ease-out on the lift,
+    // ease-in-out on the lateral — makes the move read as lift, then travel,
+    // and tells you where the bud is going before it gets there.
+    const out = s.podsOut
+    const rise = 1 - (1 - out) * (1 - out)
+    const slide = out * out * (3 - 2 * out)
 
     for (const side of ['L', 'R'] as const) {
       const g = nodes[side]
@@ -201,8 +251,14 @@ export function Product({ profile, orbit, children }: Props) {
       }
       freeP.y += Math.sin(t * 0.34 + (side === 'L' ? 0 : 1.9)) * 0.04 * s.podsOut
 
-      g.position.lerpVectors(seatP, freeP, s.podsOut)
-      g.quaternion.copy(seatQSide).slerp(freeQ, s.podsOut)
+      g.position.set(
+        MathUtils.lerp(seatP.x, freeP.x, slide),
+        MathUtils.lerp(seatP.y, freeP.y, rise),
+        MathUtils.lerp(seatP.z, freeP.z, slide),
+      )
+      // The turn follows the travel, not the lift: a bud that starts rotating
+      // while it is still in its pocket would clip straight through the well.
+      g.quaternion.copy(seatQSide).slerp(freeQ, slide)
       if (side === 'R') g.visible = s.solo < 0.995
 
       applyExplode(
@@ -242,11 +298,20 @@ export function Product({ profile, orbit, children }: Props) {
     nodes.button.position.z = btnRestZ.current - intro.press * 0.4
 
     if (skins.case.led) {
+      // Steady, and then responsive.
+      //
+      // There was a slow sine on this — a 0.13 Hz breath, right in the band
+      // that reads as an idle animation looking for something to do, and not
+      // what a charge indicator does: it sits still until something happens
+      // to it. Everything that moves it now is caused by something on screen,
+      // which is the only reason for a light to change.
       skins.case.led.emissiveIntensity =
-        1.6 + Math.sin(t * 0.8) * 0.25 + s.fxEnergy * 2.6 + intro.press * 1.4
+        1.5 + s.fxEnergy * 2.6 + intro.press * 1.4
     }
     for (const m of skins.pods.internals) {
-      m.envMapIntensity = MathUtils.lerp(0.45, 1.05, s.xray)
+      // Written as the authored base, not the live intensity: the exposure
+      // above is applied on top of it every frame.
+      m.userData.envBase = MathUtils.lerp(0.45, 1.05, s.xray)
     }
   })
 

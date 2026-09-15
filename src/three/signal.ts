@@ -35,6 +35,24 @@ const PRESS_AT = 1.7
 const PRESS_HALF = 0.16
 export const intro = { ease: 1, press: 0 }
 
+/**
+ * How much of the studio reaches the product, for a given grade level.
+ *
+ * The score's `exposure` channel was written when the environment was pinned
+ * at full brightness, so it is really a key-light dimmer: the opening shot's
+ * 0.62 was chosen against a room that stayed put. Now that the panels follow
+ * it too, passing the value straight through dims the reveal twice and lands
+ * the hero frame on a grey product. The room follows the key — a studio does
+ * go down when you pull the lights — but not one for one.
+ *
+ * The intro is folded in here rather than at each call site, because the
+ * environment is most of the light on this product and the opening fade is
+ * only honest if it takes the reflections with it.
+ */
+export function envLevel(exposure: number) {
+  return (0.74 + 0.26 * exposure) * intro.ease
+}
+
 function smoothstep(t: number) {
   return t * t * (3 - 2 * t)
 }

@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react'
 import { MathUtils, PerspectiveCamera, Vector3 } from 'three'
 import { viewportFit } from '../lib/quality'
 import { scroll, useStore } from '../state/store'
+import { LENS_MARGIN } from './materials'
 import { advance, clock, intro, updateIntro } from './signal'
 
 /**
@@ -41,6 +42,37 @@ const MIN_RADIUS = 0.3
 const INTRO_PULL = 1.22
 /** Small azimuthal drift that resolves to zero as the intro settles. */
 const INTRO_DRIFT = 0.09
+
+/** Only has to clear the backdrop sphere, which rides the camera. */
+const FAR = 120
+
+/** How close a drag may bring the camera to straight up or straight down. */
+const POLE = 0.14
+/**
+ * How far past that limit the drag may still travel, in radians. The
+ * resistance is asymptotic, so this is a ceiling the gesture approaches and
+ * never reaches.
+ */
+const POLE_GIVE = 0.11
+
+/**
+ * Progressive resistance past a boundary, the way a real surface behaves.
+ *
+ * A hard clamp at the pole reads as the interface freezing: the pointer keeps
+ * moving and the image does not, which is indistinguishable from a dropped
+ * frame. Resisting instead — following further and further behind the finger,
+ * and springing back when it lets go — says "responsive, but there is nothing
+ * more this way", which is the true statement.
+ */
+function rubberband(overshoot: number, give: number) {
+  return (overshoot * give) / (give + Math.abs(overshoot))
+}
+
+function softLimit(value: number, lo: number, hi: number, give: number) {
+  if (value < lo) return lo + rubberband(value - lo, give)
+  if (value > hi) return hi + rubberband(value - hi, give)
+  return value
+}
 
 export function Rig({ orbit }: Props) {
   const { camera, size } = useThree()
@@ -85,7 +117,12 @@ export function Rig({ orbit }: Props) {
     spherical.phi = Math.acos(MathUtils.clamp(offset.y / spherical.r, -1, 1))
 
     spherical.theta += orbit.az + (1 - intro.ease) * INTRO_DRIFT
-    spherical.phi = MathUtils.clamp(spherical.phi - orbit.pol, 0.12, Math.PI - 0.12)
+    spherical.phi = softLimit(
+      spherical.phi - orbit.pol,
+      POLE,
+      Math.PI - POLE,
+      POLE_GIVE,
+    )
     const introPull = MathUtils.lerp(INTRO_PULL, 1, intro.ease)
     spherical.r = Math.max(
       MIN_RADIUS,
@@ -104,8 +141,31 @@ export function Rig({ orbit }: Props) {
     cam.lookAt(look)
 
     const fov = s.fov + fit.current.fovBias
-    if (Math.abs(cam.fov - fov) > 1e-3) {
+    /**
+     * The depth buffer is scaled to the shot.
+     *
+     * One fixed near plane has to be small enough for the closest frame in
+     * the film — the lens passing through the shell — and that number is
+     * then carried through every wide shot, where it spends almost all of
+     * the buffer's precision on the first few centimetres in front of a
+     * camera that is twenty units away. What shows up is z-fighting between
+     * the components packed inside the bud, which are exactly the surfaces
+     * the piece exists to show. Tying the near plane to the current stand-off
+     * gives back two orders of magnitude of precision on the wide shots and
+     * costs nothing on the close ones, where it bottoms out at the same
+     * margin the shell's clipping plane uses.
+     *
+     * Far only has to clear the backdrop sphere, which rides the camera.
+     */
+    const near = MathUtils.clamp(spherical.r * 0.05, LENS_MARGIN, 0.6)
+    if (
+      Math.abs(cam.fov - fov) > 1e-3 ||
+      Math.abs(cam.near - near) > 1e-4 ||
+      cam.far !== FAR
+    ) {
       cam.fov = fov
+      cam.near = near
+      cam.far = FAR
       cam.updateProjectionMatrix()
     }
   })

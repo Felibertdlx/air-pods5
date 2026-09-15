@@ -1,10 +1,10 @@
 import { Environment, Lightformer } from '@react-three/drei'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { useRef } from 'react'
 import type { AmbientLight, DirectionalLight, Group } from 'three'
 import type { Profile } from '../lib/quality'
 import type { Theme } from '../state/store'
-import { intro, read } from './signal'
+import { envLevel, intro, read } from './signal'
 
 /**
  * A five-light product rig, plus an environment built from emissive panels
@@ -19,6 +19,7 @@ interface Props {
 }
 
 export function Studio({ profile, theme }: Props) {
+  const scene = useThree((s) => s.scene)
   const rig = useRef<Group>(null)
   const key = useRef<DirectionalLight>(null)
   const rim = useRef<DirectionalLight>(null)
@@ -57,6 +58,15 @@ export function Studio({ profile, theme }: Props) {
     // it stays the weakest of the four.
     if (top.current) top.current.intensity = (dark ? 0.32 : 0.4) * e
     if (rim.current) rim.current.intensity = (dark ? 1.9 : 0.75) * e * s.rim
+
+    // The environment is a light too, and the dominant one on a glossy shell.
+    // Leaving it at full brightness while the four directionals faded up meant
+    // the opening beat was only ever a partial fade: the product arrived
+    // already wearing its reflections. The product's own materials carry the
+    // authored per-surface version of this (see materials.setEnvironment) —
+    // this covers the few frames before those are bound, and anything in the
+    // scene that is not part of the product.
+    scene.environmentIntensity = envLevel(s.exposure)
   })
 
   return (
@@ -64,11 +74,18 @@ export function Studio({ profile, theme }: Props) {
       <ambientLight ref={amb} intensity={dark ? 0.04 : 0.07} />
 
       <group ref={rig}>
-        {/* Key — high and to the left, the one that shapes the form */}
+        {/*
+          Key — high and to the left, the one that shapes the form.
+          Warm by a hair. A white object lit by one neutral source is a grey
+          gradient; splitting the key warm against a cool fill is what gives
+          the shadow side a different colour from the lit side, which is how
+          the eye reads curvature on something this featureless.
+        */}
         <directionalLight
           ref={key}
           position={[-7.5, 9.5, 7]}
           intensity={2.6}
+          color={dark ? '#fff4e6' : '#fff6ec'}
           castShadow={profile.shadows}
           shadow-mapSize={[profile.contact || 512, profile.contact || 512]}
           shadow-camera-near={1}
@@ -80,8 +97,13 @@ export function Studio({ profile, theme }: Props) {
           shadow-bias={-0.0006}
           shadow-normalBias={0.02}
         />
-        {/* Fill — opposite and much softer, lifts the shadow side */}
-        <directionalLight ref={fill} position={[8, 2.5, 6]} intensity={0.85} />
+        {/* Fill — opposite, much softer, and cool against the warm key */}
+        <directionalLight
+          ref={fill}
+          position={[8, 2.5, 6]}
+          intensity={0.85}
+          color={dark ? '#dce7ff' : '#eaf0ff'}
+        />
         {/* Top — the long specular running down the lid */}
         <directionalLight ref={top} position={[0.5, 12, -1]} intensity={1.15} />
         {/*
@@ -96,63 +118,71 @@ export function Studio({ profile, theme }: Props) {
           intensity={2.2}
           color={dark ? '#d6e8ff' : '#ffffff'}
         />
-
-        {/*
-          The environment is the actual studio. A mid-grey room with bright
-          panels floating in it is what gives a white glossy surface its
-          gradient: dark where it reflects the room, bright where it reflects a
-          softbox. A uniformly bright environment would flatten it.
-        */}
-        <Environment resolution={profile.envRes} frames={1}>
-          {/* A darker room in both moods: the gap between the panels and the
-              room is the contrast, and a bright room closes that gap. */}
-          <color attach="background" args={[dark ? '#050507' : '#3d3d45']} />
-          {/* the big softbox that draws the long highlight down the shell */}
-          <Lightformer
-            form="rect"
-            intensity={dark ? 6 : 3.0}
-            position={[-4.5, 6, 5]}
-            rotation={[-0.5, -0.6, 0]}
-            scale={[9, 5, 1]}
-            color="#ffffff"
-          />
-          {/* a narrow strip for the crisp edge highlight */}
-          <Lightformer
-            form="rect"
-            intensity={dark ? 9 : 2.4}
-            position={[6, 2.5, -5]}
-            rotation={[0.2, 2.3, 0]}
-            scale={[7, 0.8, 1]}
-            color="#eaf2ff"
-          />
-          {/* a second, smaller box opposite, for the secondary specular */}
-          <Lightformer
-            form="rect"
-            intensity={dark ? 3.2 : 1.2}
-            position={[5.5, 4.5, 4]}
-            rotation={[-0.4, 0.7, 0]}
-            scale={[3.4, 2.6, 1]}
-            color="#ffffff"
-          />
-          {/* cool bounce from below, so the underside is not a black hole */}
-          <Lightformer
-            form="rect"
-            intensity={dark ? 0.7 : 0.45}
-            position={[0, -5.5, 2]}
-            rotation={[1.5, 0, 0]}
-            scale={[10, 6, 1]}
-            color={dark ? '#41527d' : '#ffffff'}
-          />
-          {/* ring behind the camera: something for the shell to reflect head-on */}
-          <Lightformer
-            form="ring"
-            intensity={dark ? 2.4 : 0.8}
-            position={[0, 1, 13]}
-            scale={[7, 7, 1]}
-            color="#ffffff"
-          />
-        </Environment>
       </group>
+
+      {/*
+        The environment is the actual studio. A mid-grey room with bright
+        panels floating in it is what gives a white glossy surface its
+        gradient: dark where it reflects the room, bright where it reflects a
+        softbox. A uniformly bright environment would flatten it.
+
+        Deliberately *outside* the rig group. The panels are rasterised into a
+        cubemap once (frames={1}) and that map is applied in world space, so a
+        transform on the group they are declared in does nothing at all —
+        nesting it here only ever implied a sweep it could not perform. The
+        reflections are turned with the rig by rotating the map itself, on the
+        product's own materials.
+      */}
+      <Environment resolution={profile.envRes} frames={1}>
+        {/* A darker room in both moods: the gap between the panels and the
+            room is the contrast, and a bright room closes that gap. */}
+        <color attach="background" args={[dark ? '#050507' : '#3d3d45']} />
+        {/* the big softbox that draws the long highlight down the shell */}
+        <Lightformer
+          form="rect"
+          intensity={dark ? 6 : 3.0}
+          position={[-4.5, 6, 5]}
+          rotation={[-0.5, -0.6, 0]}
+          scale={[9, 5, 1]}
+          color="#fff7ef"
+        />
+        {/* a narrow strip for the crisp edge highlight */}
+        <Lightformer
+          form="rect"
+          intensity={dark ? 9 : 2.4}
+          position={[6, 2.5, -5]}
+          rotation={[0.2, 2.3, 0]}
+          scale={[7, 0.8, 1]}
+          color="#eaf2ff"
+        />
+        {/* a second, smaller box opposite, for the secondary specular —
+            cool, so the two speculars are not the same white */}
+        <Lightformer
+          form="rect"
+          intensity={dark ? 3.2 : 1.2}
+          position={[5.5, 4.5, 4]}
+          rotation={[-0.4, 0.7, 0]}
+          scale={[3.4, 2.6, 1]}
+          color="#eef3ff"
+        />
+        {/* cool bounce from below, so the underside is not a black hole */}
+        <Lightformer
+          form="rect"
+          intensity={dark ? 0.7 : 0.45}
+          position={[0, -5.5, 2]}
+          rotation={[1.5, 0, 0]}
+          scale={[10, 6, 1]}
+          color={dark ? '#41527d' : '#e8ecf6'}
+        />
+        {/* ring behind the camera: something for the shell to reflect head-on */}
+        <Lightformer
+          form="ring"
+          intensity={dark ? 2.4 : 0.8}
+          position={[0, 1, 13]}
+          scale={[7, 7, 1]}
+          color="#ffffff"
+        />
+      </Environment>
     </>
   )
 }

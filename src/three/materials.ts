@@ -8,6 +8,7 @@ import {
   Vector3,
   type Mesh,
   type Object3D,
+  type Texture,
 } from 'three'
 import { perforationMaps } from './textures'
 
@@ -18,6 +19,8 @@ import { perforationMaps } from './textures'
  * x-ray transition.
  */
 
+type Dressed = MeshStandardMaterial | MeshPhysicalMaterial
+
 export interface Skin {
   /** Shell and lid: the surfaces that must read as one polished piece. */
   shells: MeshPhysicalMaterial[]
@@ -27,6 +30,8 @@ export interface Skin {
   internals: MeshStandardMaterial[]
   /** The emissive status light. */
   led: MeshStandardMaterial | null
+  /** Every lit surface, for the one place the environment is applied. */
+  lit: Dressed[]
   clip: Plane
 }
 
@@ -38,8 +43,17 @@ const PORT_NAMES = /^MicPortTop_/
 const INSERT = /^Boitier_Logement$/
 const CASE_CONTACT = /^Boitier_Contact_/
 
-const WHITE = new Color('#f6f6f7')
-const CASE_WHITE = new Color('#f4f4f6')
+/**
+ * Not paper white.
+ *
+ * An 0.96-albedo shell under ACES has almost nothing left above it: the lit
+ * side and the highlight land on the same output value and the form stops
+ * reading. Sitting the base a little under white keeps the specular the
+ * brightest thing on the product, which is what makes a white object look
+ * polished rather than like a white silhouette.
+ */
+const WHITE = new Color('#eeeef1')
+const CASE_WHITE = new Color('#ececef')
 
 /**
  * Fresnel x-ray.
@@ -78,6 +92,18 @@ function patchXray(m: MeshPhysicalMaterial) {
   m.customProgramCacheKey = () => 'xray'
 }
 
+/**
+ * How much of the studio a surface catches, before exposure.
+ *
+ * Kept in userData because the live envMapIntensity is this value times the
+ * current exposure — see setEnvironment. Writing the intensity directly
+ * anywhere else is overwritten on the next frame.
+ */
+function catches(m: Dressed, amount: number) {
+  m.userData.envBase = amount
+  m.envMapIntensity = amount
+}
+
 function upgradeToPhysical(mesh: Mesh, hi: boolean): MeshPhysicalMaterial {
   const src = mesh.material as MeshStandardMaterial
   const m = new MeshPhysicalMaterial({
@@ -87,10 +113,14 @@ function upgradeToPhysical(mesh: Mesh, hi: boolean): MeshPhysicalMaterial {
     map: src.map ?? null,
   })
   m.name = src.name
-  m.envMapIntensity = 1
+  catches(m, 1)
   if (hi) {
     m.clearcoat = 1
-    m.clearcoatRoughness = 0.055
+    // The coat is where the sharp reflection lives — an order of magnitude
+    // tighter than the substrate beneath it. That separation is the point of
+    // a clearcoat, and it is what lacquered plastic actually does: one crisp
+    // highlight riding on a soft one.
+    m.clearcoatRoughness = 0.035
   }
   patchXray(m)
   mesh.material = m
@@ -105,6 +135,7 @@ export function dressModel(root: Object3D, hi: boolean): Skin {
     fading: [],
     internals: [],
     led: null,
+    lit: [],
     clip: new Plane(new Vector3(0, 0, -1), 1e4),
   }
 
@@ -130,9 +161,14 @@ export function dressModel(root: Object3D, hi: boolean): Skin {
     if (SHELL_NAMES.test(name) || CASE_SHELL.test(name)) {
       const m = upgradeToPhysical(mesh, hi)
       m.color.copy(CASE_SHELL.test(name) ? CASE_WHITE : WHITE)
-      m.roughness = 0.12
+      // The substrate is not a mirror — it is pigmented plastic, and it
+      // scatters. Polishing it to 0.12 *and* putting a tight coat on top gave
+      // two near-identical speculars stacked on each other, which is the
+      // signature of a render rather than a photograph. The diffuse body
+      // stays soft; the coat above it does the reflecting.
+      m.roughness = hi ? 0.28 : 0.15
       m.metalness = 0
-      m.envMapIntensity = 1.15
+      catches(m, 1.15)
       // Only a trace of sheen. More than this lifts every grazing angle at
       // once, which turns the whole silhouette into one flat bright rim.
       m.sheen = 0.1
@@ -144,6 +180,7 @@ export function dressModel(root: Object3D, hi: boolean): Skin {
       m.userData.baseOpacity = 1
       skin.shells.push(m)
       skin.fading.push(m)
+      skin.lit.push(m)
       return
     }
 
@@ -155,9 +192,13 @@ export function dressModel(root: Object3D, hi: boolean): Skin {
       // lets the actual geometry carry the read, closer to the real
       // moulded insert's finish.
       m.roughness = 0.6
-      m.color.set('#e7e7ea')
-      m.envMapIntensity = 0.7
+      // A touch below the shell that surrounds it. A moulded insert is a
+      // separate part in a separate finish; matching it exactly to the shell
+      // is what makes the inside of a case read as one printed lump.
+      m.color.set('#e4e4e8')
+      catches(m, 0.7)
       skin.fading.push(m)
+      skin.lit.push(m)
       return
     }
 
@@ -181,7 +222,7 @@ export function dressModel(root: Object3D, hi: boolean): Skin {
         side: DoubleSide,
       })
       m.normalScale.set(1.1, 1.1)
-      m.envMapIntensity = 1.35
+      catches(m, 1.35)
       m.name = mat.name
       patchXray(m)
       mesh.material = m
@@ -189,6 +230,7 @@ export function dressModel(root: Object3D, hi: boolean): Skin {
         mesh.geometry.setAttribute('uv1', mesh.geometry.attributes.uv)
       }
       skin.fading.push(m)
+      skin.lit.push(m)
       return
     }
 
@@ -202,8 +244,9 @@ export function dressModel(root: Object3D, hi: boolean): Skin {
     if (mat?.name === 'M_Contact') {
       if ('metalness' in mat) (mat as MeshStandardMaterial).metalness = 1
       if ('roughness' in mat) (mat as MeshStandardMaterial).roughness = 0.32
-      mat.envMapIntensity = 1.1
+      catches(mat, 1.1)
       skin.internals.push(mat)
+      skin.lit.push(mat)
       return
     }
 
@@ -215,11 +258,43 @@ export function dressModel(root: Object3D, hi: boolean): Skin {
     }
 
     // Internal components: keep them standard, they are never the hero surface.
-    mat.envMapIntensity = 0.65
+    catches(mat, 0.65)
     skin.internals.push(mat)
+    skin.lit.push(mat)
   })
 
   return skin
+}
+
+/**
+ * Bind the studio to the product, and grade it.
+ *
+ * Three only honours a material's own envMapIntensity when that material
+ * carries its own envMap; for a surface lit purely by scene.environment the
+ * renderer overwrites the uniform with scene.environmentIntensity on every
+ * frame. Every authored value above — the shell catching more of the room
+ * than the components buried inside it — was therefore being thrown away,
+ * and the score's exposure channel never reached the environment at all,
+ * even though the environment is where nearly all the light on a glossy
+ * white shell comes from. Pointing each material at the same texture hands
+ * those values back, at the cost of applying the exposure here.
+ *
+ * `rotation` turns the reflections with the light rig. The panels are baked
+ * into a cubemap once, so rotating the group they are declared in moves
+ * nothing: without this the directional lights swept across the product and
+ * the authored highlight in the shell sat perfectly still.
+ */
+export function setEnvironment(
+  skin: Skin,
+  env: Texture | null,
+  gain: number,
+  rotation: number,
+) {
+  for (const m of skin.lit) {
+    if (m.envMap !== env) m.envMap = env
+    m.envMapIntensity = (m.userData.envBase as number) * gain
+    m.envMapRotation.y = rotation
+  }
 }
 
 /**
@@ -245,6 +320,11 @@ export function setXray(mats: MeshPhysicalMaterial[], amount: number) {
   }
 }
 
+/** The margin kept between the lens and any surface it passes through. The
+ *  camera's near plane uses the same number, so the two agree about where
+ *  the front of the lens is. */
+export const LENS_MARGIN = 0.02
+
 /**
  * Cut the shell away at the camera plane so the camera can pass through it.
  * Without this the lens simply ends up inside a closed surface and the frame
@@ -259,7 +339,7 @@ export function setClip(
   const on = active > 0.01
   skin.clip.normal.copy(camDir)
   // keep everything more than a hair in front of the lens
-  skin.clip.constant = -camDir.dot(camPos) - 0.02
+  skin.clip.constant = -camDir.dot(camPos) - LENS_MARGIN
   for (const m of skin.fading) {
     const planes = on ? [skin.clip] : null
     if (m.clippingPlanes !== planes) {
@@ -269,4 +349,3 @@ export function setClip(
     }
   }
 }
-
