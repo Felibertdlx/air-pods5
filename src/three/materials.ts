@@ -36,6 +36,7 @@ const MESH_NAMES = /^GrilleSpeaker_/
 const VENT_NAMES = /^VentBack_/
 const PORT_NAMES = /^MicPortTop_/
 const INSERT = /^Boitier_Logement$/
+const CASE_CONTACT = /^Boitier_Contact_/
 
 const WHITE = new Color('#f6f6f7')
 const CASE_WHITE = new Color('#f4f4f6')
@@ -116,6 +117,15 @@ export function dressModel(root: Object3D, hi: boolean): Skin {
 
     const name = mesh.name
     const mat = mesh.material as MeshStandardMaterial
+
+    // The four case contacts sit right where the moulded insert's rounded
+    // corner pulls in from the shell's own bounding box, and at full size
+    // one on the left pokes through that curved surface — visible from
+    // outside the closed case. Shrinking them slightly, in place, clears it
+    // without having to guess a directional nudge for a corner condition.
+    if (CASE_CONTACT.test(name)) {
+      mesh.scale.multiplyScalar(0.6)
+    }
 
     if (SHELL_NAMES.test(name) || CASE_SHELL.test(name)) {
       const m = upgradeToPhysical(mesh, hi)
