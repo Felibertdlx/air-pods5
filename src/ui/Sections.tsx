@@ -1,5 +1,6 @@
 import { UI } from '../i18n/strings'
 import { useStore } from '../state/store'
+import { DesignStudio } from './DesignStudio'
 import { FigureCanvas } from './FigureCanvas'
 import { goTo } from './useScrollDriver'
 
@@ -45,7 +46,7 @@ export function Sections() {
           <p className="sec__note">{s.design.note}</p>
         </div>
 
-        <FigureCanvas subject="case-closed" alt={s.design.altClosed} wide />
+        <DesignStudio />
 
         <div className="sec__pair">
           <div>
@@ -57,8 +58,6 @@ export function Sections() {
             <p>{s.design.wellsBody}</p>
           </div>
         </div>
-
-        <FigureCanvas subject="case-open" alt={s.design.altOpen} />
       </section>
 
       {/* ── Sound ──────────────────────────────────────────────────────── */}

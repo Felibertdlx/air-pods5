@@ -67,7 +67,11 @@ function Model({ subject, turn }: { subject: Subject; turn: Turn }) {
 
   return (
     <group ref={spin} rotation-y={subject === 'earbud' ? 0.6 : -0.5}>
-      <primitive object={node} />
+      {/* dispose={null}: this material shares the perforation textures
+          cached in materials.ts with every other live copy of these
+          models — letting this figure's unmount dispose them would break
+          whichever other canvas is still using them. */}
+      <primitive object={node} dispose={null} />
     </group>
   )
 }

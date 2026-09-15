@@ -328,7 +328,15 @@ export class Engine {
   }
 
   /** The hinge: a short friction sweep before the latch lands. */
-  private hinge(up: boolean) {
+  /** A single button-press tap — the pairing button's own timbre, wherever
+   * it's pressed from. */
+  press() {
+    this.click(2100, 0.14, 0.08)
+  }
+
+  /** Public: also used directly by the interactive Design view, which has
+   * no timeline of its own to drive the crossing-detection in `loop()`. */
+  hinge(up: boolean) {
     const ctx = this.ctx
     if (!ctx || !this.master) return
     const t = ctx.currentTime
@@ -418,7 +426,8 @@ export class Engine {
   }
 
   /** A soft rising breath as the buds leave, or settle as they return. */
-  private lift(up: boolean) {
+  /** Public, same reason as `hinge`. */
+  lift(up: boolean) {
     const ctx = this.ctx
     if (!ctx || !this.master) return
     const t = ctx.currentTime
@@ -554,7 +563,7 @@ export class Engine {
     this.lastOut = s.podsOut
 
     // The one button press in the opening beat.
-    if (intro.press > 0.85 && this.lastPress <= 0.85) this.click(2100, 0.085, 0.07)
+    if (intro.press > 0.85 && this.lastPress <= 0.85) this.press()
     this.lastPress = intro.press
 
     // Blips, while data is moving. Rate follows the channel, not a metronome.

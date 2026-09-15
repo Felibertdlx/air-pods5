@@ -139,7 +139,12 @@ export function dressModel(root: Object3D, hi: boolean): Skin {
 
     if (INSERT.test(name)) {
       const m = upgradeToPhysical(mesh, false)
-      m.roughness = 0.45
+      // Was 0.45 — glossy enough that the wells' own shape mostly read from
+      // specular highlights rather than shading, which flattened the stem
+      // channel into the same soft bowl as the head pocket. More matte
+      // lets the actual geometry carry the read, closer to the real
+      // moulded insert's finish.
+      m.roughness = 0.6
       m.color.set('#e7e7ea')
       m.envMapIntensity = 0.7
       skin.fading.push(m)
@@ -174,6 +179,18 @@ export function dressModel(root: Object3D, hi: boolean): Skin {
         mesh.geometry.setAttribute('uv1', mesh.geometry.attributes.uv)
       }
       skin.fading.push(m)
+      return
+    }
+
+    // The four charging contacts — real gold, not the source file's default
+    // silver, matching the copy ("quatre contacts dorés") and giving the
+    // wells something for the eye to land on, the way the real case's do.
+    if (mat?.name === 'M_Contact') {
+      mat.color.set('#d4af6a')
+      if ('metalness' in mat) (mat as MeshStandardMaterial).metalness = 1
+      if ('roughness' in mat) (mat as MeshStandardMaterial).roughness = 0.32
+      mat.envMapIntensity = 1.4
+      skin.internals.push(mat)
       return
     }
 
