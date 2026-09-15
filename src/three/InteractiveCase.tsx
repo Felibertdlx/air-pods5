@@ -4,7 +4,13 @@ import type { ThreeEvent } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import type { Mesh, MeshPhysicalMaterial, Object3D } from 'three'
 import { engine } from '../audio/engine'
-import { CASE, CASE_SCALE, POD_SCALE, POD_SEAT_TRIM, SEAT_Y } from './anatomy'
+import {
+  CASE,
+  CASE_SCALE,
+  POD_SCALE,
+  POD_SEAT_TRIM,
+  SEAT_Y,
+} from './anatomy'
 import { dressModel } from './materials'
 
 /**

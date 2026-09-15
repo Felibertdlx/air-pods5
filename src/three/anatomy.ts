@@ -92,6 +92,41 @@ export const POD_SEAT_TRIM = 0.08
  */
 export const SEAT_Y = CASE.wellFloorY - POD.stemTip.y
 
+/** Heading of a direction in the horizontal plane, measured from +z toward +x. */
+function heading(v: Vector3) {
+  return Math.atan2(v.x, v.z)
+}
+
+/**
+ * How far a stowed bud is turned about the vertical so its speaker faces the
+ * centre of the case — the way a real pair sits in the wells, nozzle to
+ * nozzle across the divider, rather than both pointing the same way out of
+ * the back.
+ *
+ * Derived from the measured driver axis rather than dialled in by eye: take
+ * the axis's heading in the horizontal plane, subtract it from the heading we
+ * want the bud to end up with (+x for the left bud, −x for the right), and
+ * that difference is the turn.
+ *
+ * The two are not negatives of each other, which looks wrong until you
+ * remember the right bud's mesh is mirrored across z rather than across x
+ * (see mirrorForRight) — its axis starts from a different heading, so it
+ * needs a different correction to end up pointing back at its partner.
+ *
+ * NOT APPLIED YET, on purpose. Turning the buds by this much inside the
+ * wells they have now doesn't work: `build_well` in the case's own build
+ * script lofts each well from a fixed profile — a nearly circular head
+ * pocket over a 2.4 × 1.9 mm stem slot — moulded around the bud at zero
+ * yaw. A bud is an L, so turning it either swings the head out of the
+ * pocket or the stem out of the slot; both read as the buds sinking in
+ * crooked and poking through the shell. The wells have to be re-lofted at
+ * this same angle before the buds can be turned to match.
+ */
+export const SEAT_YAW = {
+  L: Math.PI / 2 - heading(POD.axis),
+  R: -Math.PI / 2 - heading(new Vector3(POD.axis.x, POD.axis.y, -POD.axis.z)),
+}
+
 /**
  * The right bud is the left one mirrored across Blender's Y axis, which the
  * Y-up conversion turns into a mirror across scene Z.
