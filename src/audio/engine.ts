@@ -51,7 +51,6 @@ export class Engine {
   private wet: GainNode | null = null
   private noise: AudioBuffer | null = null
 
-  private bed: GainNode | null = null
   private air: GainNode | null = null
   private airFilter: BiquadFilterNode | null = null
   private padGain: GainNode | null = null
@@ -114,11 +113,13 @@ export class Engine {
     const verb = ctx.createConvolver()
     verb.buffer = this.makeImpulse(ctx, 2.6)
     this.wet = ctx.createGain()
-    this.wet.gain.value = 0.34
+    // Was 0.34 — a convolver on top of a noise bed is exactly what read as
+    // a permanent hiss. Everything left feeding it is either event-driven
+    // or a pure tone, so the room can afford to be much drier.
+    this.wet.gain.value = 0.22
     this.wet.connect(verb).connect(this.master)
 
     // ---- voices ----------------------------------------------------------
-    this.buildBed(ctx)
     this.buildAir(ctx)
     this.buildPad(ctx)
     this.buildSub(ctx)
@@ -190,28 +191,6 @@ export class Engine {
     src.playbackRate.value = rate
     src.start()
     return src
-  }
-
-  /** The room: a wide, quiet bed under everything, breathing slowly. */
-  private buildBed(ctx: AudioContext) {
-    const lp = ctx.createBiquadFilter()
-    lp.type = 'lowpass'
-    lp.frequency.value = 420
-    lp.Q.value = 0.3
-
-    // A very slow sweep so the bed is never quite static.
-    const lfo = ctx.createOscillator()
-    lfo.frequency.value = 0.045
-    const lfoGain = ctx.createGain()
-    lfoGain.gain.value = 130
-    lfo.connect(lfoGain).connect(lp.frequency)
-    lfo.start()
-
-    this.bed = ctx.createGain()
-    this.bed.gain.value = 0
-    this.loopSource(ctx, 0.85).connect(lp).connect(this.bed)
-    this.bed.connect(this.master!)
-    this.bed.connect(this.wet!)
   }
 
   /** Movement: band-passed noise that swells with the camera's speed. */
@@ -296,30 +275,52 @@ export class Engine {
 
   // ---- one-shots ----------------------------------------------------------
 
-  /** A click: a transient, so it is drawn each time rather than looped. */
+  /**
+   * A click: a transient, so it is drawn each time rather than looped.
+   *
+   * This used to be pure bandpassed noise, which is why it read as a soft
+   * pop rather than a click — noise has no pitch to catch the ear. A real
+   * mechanism click has two parts: a short pitched body (the part that
+   * makes it a *note*, not a thump) and a brief broadband snap on top of it
+   * (the part that makes it sound hard rather than plucked). Both, together,
+   * are what a keyboard or a shutter actually sounds like.
+   */
   private click(freq: number, gain: number, decay: number, pan = 0) {
     const ctx = this.ctx
-    if (!ctx || !this.master) return
+    if (!ctx || !this.master || !this.wet) return
     const t = ctx.currentTime
-
-    const src = this.loopSource(ctx, 1.8)
-    const bp = ctx.createBiquadFilter()
-    bp.type = 'bandpass'
-    bp.frequency.value = freq
-    bp.Q.value = 3.4
-
-    const g = ctx.createGain()
-    g.gain.setValueAtTime(0, t)
-    g.gain.linearRampToValueAtTime(gain, t + 0.004)
-    g.gain.exponentialRampToValueAtTime(0.0001, t + decay)
 
     const p = ctx.createStereoPanner()
     p.pan.value = pan
-
-    src.connect(bp).connect(g).connect(p)
     p.connect(this.master)
-    p.connect(this.wet!)
-    src.stop(t + decay + 0.1)
+    p.connect(this.wet)
+
+    // The body: a short pitched tone, falling slightly as it decays — the
+    // same shape a struck object makes.
+    const osc = ctx.createOscillator()
+    osc.type = 'triangle'
+    osc.frequency.setValueAtTime(freq, t)
+    osc.frequency.exponentialRampToValueAtTime(freq * 0.7, t + decay)
+    const og = ctx.createGain()
+    og.gain.setValueAtTime(0, t)
+    og.gain.linearRampToValueAtTime(gain, t + 0.002)
+    og.gain.exponentialRampToValueAtTime(0.0001, t + decay)
+    osc.connect(og).connect(p)
+    osc.start(t)
+    osc.stop(t + decay + 0.02)
+
+    // The snap: a few milliseconds of high-passed noise right at the
+    // attack — this is what separates a "click" from a "pluck".
+    const snap = Math.min(0.018, decay * 0.3)
+    const src = this.loopSource(ctx, 2.6)
+    const hp = ctx.createBiquadFilter()
+    hp.type = 'highpass'
+    hp.frequency.value = freq * 1.6
+    const ng = ctx.createGain()
+    ng.gain.setValueAtTime(gain * 0.7, t)
+    ng.gain.exponentialRampToValueAtTime(0.0001, t + snap)
+    src.connect(hp).connect(ng).connect(p)
+    src.stop(t + snap + 0.05)
   }
 
   /** The hinge: a short friction sweep before the latch lands. */
@@ -346,7 +347,7 @@ export class Engine {
     src.stop(t + 0.4)
 
     // the latch, a beat after the friction
-    window.setTimeout(() => this.click(up ? 2400 : 1500, up ? 0.1 : 0.16, 0.12), 210)
+    window.setTimeout(() => this.click(up ? 2400 : 1500, up ? 0.15 : 0.18, 0.1), 210)
   }
 
   /**
@@ -501,9 +502,9 @@ export class Engine {
     // ---- levels ----------------------------------------------------------
     const speed = Math.min(1, Math.abs(clock.velocity) * 26)
 
-    // Kept close to inaudible — a sense of room, not a permanent hiss.
-    this.set(this.bed, 0.016)
-    this.set(this.air, 0.015 + speed * 0.055, 0.22)
+    // Silent at rest — audible only as the camera actually moves, so
+    // nothing is playing when nothing on screen is happening.
+    this.set(this.air, 0.004 + speed * 0.05, 0.22)
     if (this.airFilter) {
       // faster camera, brighter air
       this.airFilter.frequency.setTargetAtTime(560 + speed * 1500, t, 0.25)
