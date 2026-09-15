@@ -1,0 +1,8 @@
+# Vercel installs and builds from source; none of this needs uploading.
+node_modules
+dist
+.git
+.claude
+
+# The model pipeline runs in Blender on a workstation, not in the build.
+blender

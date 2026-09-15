@@ -19,3 +19,5 @@ Thumbs.db
 
 # local tooling state
 .claude/
+
+.vercel
