@@ -39,10 +39,15 @@ export function Chrome() {
     let raf = 0
     const tick = () => {
       // The scroll hint belongs to the first moment only.
+      //
+      // Opacity and nothing else. It used to be given pointer-events: auto
+      // whenever it was visible, which is the whole of the opening beat —
+      // and it sits in the middle of the bottom edge of the canvas, so for
+      // that entire passage a rule and a caption were quietly swallowing
+      // drags meant for the product. A label that cannot be clicked has no
+      // business being in the way of something that can.
       if (hint.current) {
-        const o = Math.max(0, 1 - scroll.t * 45)
-        hint.current.style.opacity = String(o)
-        hint.current.style.pointerEvents = o < 0.05 ? 'none' : 'auto'
+        hint.current.style.opacity = String(Math.max(0, 1 - scroll.t * 45))
       }
       // Replaying is only an offer once there is something to go back from,
       // and it steps aside for the written sections, where it would sit on

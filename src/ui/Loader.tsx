@@ -14,7 +14,9 @@ import { useStore } from '../state/store'
  */
 
 const HOLD_MS = 420
-const FADE_MS = 900
+/** Matches the .loader opacity transition; the two have to agree or `enter()`
+ *  fires while the curtain is still on screen — or, worse, after a gap. */
+const FADE_MS = 620
 
 export function Loader() {
   const { progress } = useProgress()

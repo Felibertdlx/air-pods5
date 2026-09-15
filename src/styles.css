@@ -1,48 +1,110 @@
 /* ===========================================================================
    AirPods 5 — Sound, revealed
 
-   An original identity built on Apple's principles rather than their marks:
-   almost nothing on screen, one accent, hairlines instead of boxes, and an
-   instrument-style numeric readout that says the product is being measured
-   rather than advertised.
+   The page's argument is in its own closing line: nothing here is a video.
+   Everything on screen is being measured live, and the copy says so — 50,1
+   millimetres, a tenth of a millimetre per perforation, "mesuré, pas estimé".
+   So the identity is a measuring instrument, not a product advertisement:
+   hairlines instead of boxes, a graduated rule instead of a progress bar, and
+   type that is engineered rather than perfumed.
+
+   Two rules the whole sheet obeys:
+
+   1. The palette is the cyclorama. Every grey here is lifted from the graded
+      backdrop the 3D scene renders (Backdrop.tsx), so scrolling out of the
+      film and into the writing is walking to the other end of one room rather
+      than cutting to a different page. The old neutral #f2f2f4 belonged to no
+      room at all.
+
+   2. Teal means a live measurement, and nothing else. It is the same value
+      the scene gives its signal effects, and it is spent in exactly three
+      places: the shot number, the graduated rule, and sound being on. It is
+      not a label colour, not a logotype colour, and not a decoration.
    ======================================================================== */
 
 :root {
-  --ink: #0a0a0c;
-  --ink-2: #3b3b43;
-  --ink-3: #4a4a54;
-  --ground: #f2f2f4;
-  --line: rgba(10, 10, 12, 0.14);
-  --line-soft: rgba(10, 10, 12, 0.07);
+  /* Lifted from the cyclorama's own stops, so the written half is the same
+     room as the film: #d8d8e0 lightened for paper, #b6b6c2 for the rule. */
+  --ink: #0b0b10;
+  --ink-2: #35353f;
+  /* The tertiary ink is the whole utility layer — eyebrows, part numbers,
+     spec keys — at twelve pixels. 4.7:1 on this ground: light enough to sit
+     a clear step behind the body copy, dark enough to still pass AA at that
+     size, which #6c6c7b did not once the ground came down to meet the
+     cyclorama. */
+  --ink-3: #666675;
+  --ground: #eaeaf1;
+  --line: rgba(11, 11, 16, 0.15);
+  --line-soft: rgba(11, 11, 16, 0.08);
   /* The graphic accent and the text accent are different colours on purpose:
-     the teal that reads well as a hairline over 3D is 2.4:1 as small type. */
-  --accent: #0b8b78;
-  --accent-ink: #065349;
-  --scrim: 242, 242, 244;
+     the teal that reads well as a hairline over 3D is 2.4:1 as small type.
+     --accent is the exact value the scene uses for its signal effects. */
+  --accent: #0e9f8a;
+  --accent-ink: #0a6f60;
+  --scrim: 234, 234, 241;
 
   --gutter: clamp(20px, 4.2vw, 68px);
   --shell: min(1440px, 100%);
 
-  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Display',
-    'Segoe UI', system-ui, sans-serif;
-  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo,
-    Consolas, monospace;
+  /* Instrument Sans over Inter: squarer counters, a narrower set, and no
+     weight under 400 to reach for — which is the point. Thin display type is
+     how a page says "premium" when it has nothing else to say, and it has no
+     business next to a product whose whole story is density and tolerance.
+     DM Mono over JetBrains Mono for the same reason in the other direction:
+     the utility voice here is labelling a drawing, not printing a stack
+     trace. */
+  --font: 'Instrument Sans', -apple-system, BlinkMacSystemFont,
+    'Segoe UI Variable Display', 'Segoe UI', system-ui, sans-serif;
+  --mono: 'DM Mono', ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas,
+    monospace;
 
-  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Utility type: 0.08em, not the 0.2em that every generated page sets on an
+     uppercase mono eyebrow. Mono is already wide; letter-spacing on top of it
+     stops being typography and becomes a texture. */
+  --track-util: 0.08em;
+
+  /* Motion.
+
+     One curve per job, because a single curve used everywhere is the same as
+     having none. The built-in CSS easings are too weak to read as a decision;
+     these are the stronger variants.
+
+     --ease-out    things arriving or leaving: fast first, so the interface
+                   answers on the frame the pointer moved
+     --ease-in-out things travelling across the screen, which have to get up
+                   to speed and slow down again
+     --ease        hover and colour: no entrance and no exit, so neither end
+                   wants a punch */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Durations, named for what they are rather than how long they last. */
+  --press: 120ms; /* the answer to a finger going down */
+  --tap: 180ms; /* hover, colour, a control changing state */
+  --pop: 240ms; /* something small arriving or leaving */
+  --shed: 160ms; /* the same thing leaving: always quicker than it arrived */
+  /* The mood change. Long on purpose and matched to the canvas crossfade in
+     Backdrop.tsx, so the two halves of the page change together instead of
+     one chasing the other. */
+  --swap: 1100ms;
 
   color-scheme: light;
 }
 
+/* Dark is the same room with the lights off, and it is built from the same
+   three stops: #08080b is the backdrop's own mid value, and #b6b6c2 — the
+   wall in daylight — becomes the secondary type here. */
 :root[data-theme='dark'] {
-  --ink: #f4f4f6;
-  --ink-2: #c4c4cd;
-  --ink-3: #9a9aa5;
-  --ground: #08080a;
-  --line: rgba(244, 244, 246, 0.18);
-  --line-soft: rgba(244, 244, 246, 0.08);
+  --ink: #f1f1f6;
+  --ink-2: #b6b6c2;
+  --ink-3: #7a7a89;
+  --ground: #08080b;
+  --line: rgba(241, 241, 246, 0.18);
+  --line-soft: rgba(241, 241, 246, 0.08);
   --accent: #5fe3c6;
   --accent-ink: #5fe3c6;
-  --scrim: 4, 4, 6;
+  --scrim: 8, 8, 11;
   color-scheme: dark;
 }
 
@@ -65,7 +127,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
-  transition: background 900ms var(--ease), color 900ms var(--ease);
+  transition: background var(--swap) var(--ease), color var(--swap) var(--ease);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -86,6 +148,14 @@ body {
   .pages button {
     cursor: pointer;
   }
+}
+
+/* One cursor at a time. The ring is the canvas's cursor; over the written
+   half the system pointer is back, and drawing both at once is the thing
+   that makes a custom cursor feel bolted on rather than designed. */
+.cursor[data-over] .cursor__dot,
+.cursor[data-over] .cursor__ring {
+  opacity: 0;
 }
 
 .sr-only {
@@ -130,7 +200,30 @@ body {
   position: relative;
   z-index: 3;
   background: var(--ground);
-  transition: background 900ms var(--ease);
+  transition: background var(--swap) var(--ease);
+}
+
+/* The navigation is fixed and has no bar behind it, which is right over the
+   film — the backdrop is already graded and a panel would cut a hole in the
+   shot. Over the writing it was wrong: section titles slid underneath it and
+   the two sets of words overlapped. A sticky edge inside the written half
+   only, fading the ground up under the chrome exactly where they meet, gives
+   the nav something to sit on without introducing the box this whole design
+   is built to avoid. */
+.pages::before {
+  content: '';
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: block;
+  height: clamp(58px, 8vh, 96px);
+  margin-bottom: clamp(-96px, -8vh, -58px);
+  background: linear-gradient(
+    to bottom,
+    var(--ground) 32%,
+    rgba(var(--scrim), 0) 100%
+  );
+  pointer-events: none;
 }
 
 .sec {
@@ -138,6 +231,8 @@ body {
   margin-inline: auto;
   padding: clamp(96px, 16vh, 200px) var(--gutter);
   border-top: 1px solid var(--line-soft);
+  /* A section jumped to from the navigation has to arrive below it. */
+  scroll-margin-top: clamp(64px, 10vh, 104px);
 }
 
 .sec:first-child {
@@ -148,22 +243,46 @@ body {
   max-width: 34rem;
 }
 
+/* Not a tag.
+   Uppercase mono in the accent at 0.2em is the single most reproduced
+   element in generated web design, and it was doing the wrong job here as
+   well: "Design", "Son", "Intérieur" are what the section is about, not a
+   live value, so they have no claim on the accent. Sentence case, tight, in
+   the tertiary ink, with a rule running out to the measure — the way a part
+   is labelled on a drawing. */
 .sec__eyebrow {
-  margin: 0 0 clamp(20px, 3vh, 34px);
+  display: flex;
+  align-items: center;
+  gap: 0.9em;
+  margin: 0 0 clamp(18px, 2.6vh, 28px);
   font-family: var(--mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 400;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--accent-ink);
+  letter-spacing: var(--track-util);
+  color: var(--ink-3);
 }
 
+.sec__eyebrow::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line-soft);
+}
+
+/* Weight 600, not 200.
+   A hairline display face is what a page reaches for when it wants to look
+   expensive without having earned it, and at 3.6rem on a light ground it
+   simply goes grey. The product this page is about is dense, tightly
+   toleranced and photographs with one hard specular on a soft body — the type
+   should have the same density. Tracking goes negative as the size grows,
+   because letterforms read further apart the larger they get. */
 .sec__title {
   margin: 0;
   font-size: clamp(2rem, 4.6vw, 3.6rem);
-  font-weight: 200;
-  line-height: 1.06;
-  letter-spacing: -0.032em;
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.028em;
+  word-spacing: 0.04em;
   color: var(--ink);
   text-wrap: balance;
 }
@@ -174,6 +293,7 @@ body {
 
 .sec__title--lg {
   font-size: clamp(2.4rem, 7vw, 5rem);
+  letter-spacing: -0.034em;
 }
 
 .sec__cols {
@@ -187,10 +307,10 @@ body {
   margin: 0;
   max-width: 42ch;
   font-size: clamp(1.0625rem, 1.4vw, 1.3125rem);
-  font-weight: 300;
-  line-height: 1.56;
-  letter-spacing: -0.008em;
-  color: var(--ink);
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: -0.011em;
+  color: var(--ink-2);
 }
 
 .sec__lead--wide {
@@ -224,8 +344,8 @@ body {
   padding-top: 20px;
   border-top: 1px solid var(--line);
   font-size: 1.0625rem;
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  font-weight: 600;
+  letter-spacing: -0.016em;
   color: var(--ink);
 }
 
@@ -306,7 +426,7 @@ body {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-3);
-  transition: color 0.2s ease;
+  transition: color var(--tap) var(--ease);
 }
 
 .figure__hint[data-show] {
@@ -352,10 +472,9 @@ body {
 
 .facts dt {
   font-family: var(--mono);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 400;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  letter-spacing: var(--track-util);
   color: var(--ink-3);
 }
 
@@ -384,19 +503,23 @@ body {
   border-top: 1px solid var(--line-soft);
 }
 
+/* The order is real — the list walks from the moulded shell inward to the
+   charging contacts — so the numbers stay. What goes is the accent: a fixed
+   ordinal is not a measurement, and colouring it teal was borrowing the one
+   signal the page has for a row label. Tertiary ink, tabular, quiet. */
 .parts__n {
   font-family: var(--mono);
   font-size: 11.5px;
   font-weight: 400;
-  letter-spacing: 0.1em;
-  color: var(--accent-ink);
+  letter-spacing: var(--track-util);
+  color: var(--ink-3);
   font-variant-numeric: tabular-nums;
 }
 
 .parts__name {
   font-size: 1.0625rem;
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  font-weight: 600;
+  letter-spacing: -0.016em;
   color: var(--ink);
 }
 
@@ -438,24 +561,26 @@ body {
   width: min(42%, 18rem);
   padding-right: clamp(16px, 3vw, 48px);
   font-family: var(--mono);
-  font-size: 11.5px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: var(--track-util);
   color: var(--ink-3);
 }
 
+/* The figures are the argument — "mesuré, pas estimé" — so they get a
+   slashed zero and tabular widths, and every number on the page lines up in
+   its column whatever row it is in. */
 .spec td {
   font-size: 1.0625rem;
   line-height: 1.55;
   color: var(--ink);
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: tabular-nums slashed-zero;
 }
 
 .spec__sub {
   margin: clamp(72px, 11vh, 130px) 0 0;
   font-size: 1.25rem;
-  font-weight: 400;
-  letter-spacing: -0.014em;
+  font-weight: 600;
+  letter-spacing: -0.02em;
   color: var(--ink);
 }
 
@@ -471,8 +596,12 @@ body {
   max-width: 40ch;
 }
 
-.cta {
+/* Carries the scroll reveal so the button does not have to; see Sections.tsx. */
+.sec__act {
   margin-top: clamp(40px, 6vh, 64px);
+}
+
+.cta {
   min-height: 48px;
   padding: 0 28px;
   border: 1px solid var(--ink);
@@ -484,14 +613,25 @@ body {
   font-weight: 400;
   letter-spacing: 0.01em;
   transition:
-    background 420ms var(--ease),
-    color 420ms var(--ease);
+    background var(--tap) var(--ease),
+    color var(--tap) var(--ease),
+    scale var(--press) var(--ease-out);
 }
 
-.cta:hover,
+@media (hover: hover) and (pointer: fine) {
+  .cta:hover {
+    background: var(--ink);
+    color: var(--ground);
+  }
+}
+
 .cta:focus-visible {
   background: var(--ink);
   color: var(--ground);
+}
+
+.cta:active {
+  scale: 0.97;
 }
 
 .cta:focus-visible {
@@ -515,18 +655,20 @@ body {
 .foot__mark {
   margin: 0;
   font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.16em;
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink);
 }
 
+/* The numeral is part of a name, not a live value. It earns its separation
+   from weight and face, which is all it ever needed. */
 .foot__mark span {
   margin-left: 0.45em;
   font-family: var(--mono);
   font-weight: 400;
   letter-spacing: 0;
-  color: var(--accent-ink);
+  color: var(--ink-3);
 }
 
 .foot__note {
@@ -563,10 +705,17 @@ body {
   min-height: 44px;
   font-family: var(--font);
   font-size: clamp(12px, 1.05vw, 14px);
-  font-weight: 500;
-  letter-spacing: 0.16em;
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink);
+  transition: scale var(--press) var(--ease-out);
+}
+
+/* Every pressable thing answers on pointer-down, not on release. This is the
+   cheapest trust there is: the interface heard you before it did anything. */
+.chrome__mark:active {
+  scale: 0.97;
 }
 
 .chrome__mark:focus-visible {
@@ -595,12 +744,25 @@ body {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ink-2);
-  transition: color 320ms var(--ease);
+  transition:
+    color var(--tap) var(--ease),
+    scale var(--press) var(--ease-out);
 }
 
-.chrome__links button:hover,
+/* Hover only where a pointer can actually hover. A touch tap fires :hover and
+   then leaves it stuck on, which reads as the wrong item being selected. */
+@media (hover: hover) and (pointer: fine) {
+  .chrome__links button:hover {
+    color: var(--ink);
+  }
+}
+
 .chrome__links button:focus-visible {
   color: var(--ink);
+}
+
+.chrome__links button:active {
+  scale: 0.94;
 }
 
 .chrome__links button:focus-visible {
@@ -652,25 +814,42 @@ body {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   opacity: 0;
-  transform: translateY(8px);
+  /* translate and scale rather than one transform: the arrival and the press
+     are two separate animations on the same element, and a single transform
+     property means the later one silently wins. */
+  translate: 0 8px;
   pointer-events: none;
   transition:
-    opacity 600ms var(--ease),
-    transform 600ms var(--ease),
-    color 320ms var(--ease),
-    border-color 320ms var(--ease);
+    opacity var(--shed) var(--ease-out),
+    translate var(--shed) var(--ease-out),
+    scale var(--press) var(--ease-out),
+    color var(--tap) var(--ease),
+    border-color var(--tap) var(--ease);
 }
 
 .restart[data-show] {
   opacity: 1;
-  transform: none;
+  translate: none;
   pointer-events: auto;
+  /* Arriving takes longer than leaving. A control that appears has to be
+     noticed; one that leaves has already done its job. */
+  transition-duration: var(--pop), var(--pop), var(--press), var(--tap), var(--tap);
 }
 
-.restart:hover,
+@media (hover: hover) and (pointer: fine) {
+  .restart:hover {
+    color: var(--ink);
+    border-color: var(--ink-3);
+  }
+}
+
 .restart:focus-visible {
   color: var(--ink);
   border-color: var(--ink-3);
+}
+
+.restart[data-show]:active {
+  scale: 0.97;
 }
 
 .restart:focus-visible {
@@ -700,7 +879,7 @@ body {
   font-weight: 400;
   font-size: 0.9em;
   letter-spacing: 0;
-  color: var(--accent-ink);
+  color: var(--ink-3);
 }
 
 .chrome__tools {
@@ -722,16 +901,27 @@ body {
   background: none;
   padding: 0;
   color: var(--ink-3);
-  transition: color 320ms var(--ease);
+  transition:
+    color var(--tap) var(--ease),
+    scale var(--press) var(--ease-out);
 }
 
 .sound[data-on] {
   color: var(--accent-ink);
 }
 
-.sound:hover,
+@media (hover: hover) and (pointer: fine) {
+  .sound:hover {
+    color: var(--ink);
+  }
+}
+
 .sound:focus-visible {
   color: var(--ink);
+}
+
+.sound:active {
+  scale: 0.9;
 }
 
 .sound:focus-visible {
@@ -749,12 +939,17 @@ body {
   height: 13px;
 }
 
+/* Scaled, not resized. Animating height on three bars is three layout passes
+   a frame for something 1.5 pixels wide; scaleY is the same picture on the
+   compositor. The box stays 12px tall either way, so nothing around it moves. */
 .sound__bars i {
   display: block;
   width: 1.5px;
-  height: 2px;
+  height: 12px;
   background: currentColor;
-  transition: height 420ms var(--ease);
+  transform-origin: 50% 50%;
+  scale: 1 0.17;
+  transition: scale var(--pop) var(--ease-out);
 }
 
 .sound[data-on] .sound__bars i {
@@ -772,17 +967,17 @@ body {
 @keyframes bars {
   0%,
   100% {
-    height: 3px;
+    scale: 1 0.25;
   }
   50% {
-    height: 12px;
+    scale: 1 1;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .sound[data-on] .sound__bars i {
     animation: none;
-    height: 8px;
+    scale: 1 0.65;
   }
 }
 
@@ -806,16 +1001,27 @@ body {
   font-weight: 400;
   letter-spacing: 0.1em;
   color: var(--ink-3);
-  transition: color 320ms var(--ease);
+  transition:
+    color var(--tap) var(--ease),
+    scale var(--press) var(--ease-out);
 }
 
 .lang button[data-on] {
   color: var(--ink);
 }
 
-.lang button:hover,
+@media (hover: hover) and (pointer: fine) {
+  .lang button:hover {
+    color: var(--ink);
+  }
+}
+
 .lang button:focus-visible {
   color: var(--ink);
+}
+
+.lang button:active {
+  scale: 0.9;
 }
 
 .lang button:focus-visible {
@@ -839,13 +1045,24 @@ body {
   font-weight: 400;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  transition: color 400ms var(--ease);
+  transition:
+    color var(--tap) var(--ease),
+    scale var(--press) var(--ease-out);
   min-height: 44px;
 }
 
-.chrome__theme:hover,
+@media (hover: hover) and (pointer: fine) {
+  .chrome__theme:hover {
+    color: var(--ink);
+  }
+}
+
 .chrome__theme:focus-visible {
   color: var(--ink);
+}
+
+.chrome__theme:active {
+  scale: 0.96;
 }
 
 .chrome__theme:focus-visible {
@@ -860,7 +1077,7 @@ body {
   height: 14px;
   border: 1px solid var(--line);
   border-radius: 7px;
-  transition: border-color 500ms var(--ease);
+  transition: border-color var(--swap) var(--ease);
 }
 
 .chrome__theme-knob {
@@ -871,13 +1088,16 @@ body {
   height: 8px;
   border-radius: 50%;
   background: var(--ink);
+  /* The knob answers the click; the page takes its time changing mood behind
+     it. A knob that travels for six hundred milliseconds reads as a switch
+     that has not decided yet. */
   transition:
-    transform 620ms var(--ease),
-    background 620ms var(--ease);
+    translate var(--pop) var(--ease-out),
+    background var(--swap) var(--ease);
 }
 
 :root[data-theme='dark'] .chrome__theme-knob {
-  transform: translateX(18px);
+  translate: 18px 0;
   background: var(--accent);
 }
 
@@ -893,6 +1113,9 @@ body {
   inset: 0;
   z-index: 15;
   pointer-events: none;
+  /* The overlay as a whole is state-driven — it stands down when the written
+     sections cover the canvas — so it is the one that wants a transition. */
+  transition: opacity var(--pop) var(--ease-out);
 }
 
 .caption {
@@ -900,7 +1123,10 @@ body {
   bottom: clamp(88px, 12vh, 150px);
   left: var(--gutter);
   width: min(30rem, calc(100% - var(--gutter) * 2));
-  transition: opacity 520ms linear;
+  /* No transition here on purpose. The caption's fade is authored in the
+     score (sample.ts, DISSOLVE) and written to this element every frame; a
+     CSS transition on top of that is a second smoothing pass, and it makes
+     the words arrive half a second after the shot they belong to. */
   will-change: opacity;
 }
 
@@ -949,22 +1175,64 @@ body {
   text-align: right;
 }
 
-.caption__eyebrow {
+/* A slate, not an eyebrow.
+   The copy already writes these as "01 — Surface": a shot number and its
+   subject, which is exactly what a camera slate carries. Setting the whole
+   string as one uppercase accent-coloured tag threw that structure away. Split
+   in two, the number can be what the accent is for — a live value, counting up
+   as the film runs — and the subject can be what it is, a quiet label. */
+.caption__slate {
+  display: flex;
+  align-items: baseline;
+  gap: 0.85em;
   margin: 0 0 clamp(10px, 1.4vh, 18px);
   font-family: var(--mono);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 400;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+  letter-spacing: var(--track-util);
+}
+
+.caption__shot {
+  display: flex;
+  align-items: center;
+  gap: 0.85em;
   color: var(--accent-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The tie between number and subject. Drawn rather than typed, so it does not
+   depend on an em dash surviving translation. */
+.caption__shot::after {
+  content: '';
+  width: clamp(14px, 2vw, 26px);
+  height: 1px;
+  background: var(--line);
+}
+
+/* The opening card has a name where the others have a number. */
+.caption__shot:empty {
+  display: none;
+}
+
+.caption__subject {
+  color: var(--ink-3);
+}
+
+.caption[data-align='centre'] .caption__slate {
+  justify-content: center;
+}
+
+.caption[data-align='right'] .caption__slate {
+  justify-content: flex-end;
 }
 
 .caption__title {
   margin: 0;
   font-size: clamp(2.1rem, 5.6vw, 4.2rem);
-  font-weight: 200;
-  line-height: 1.02;
-  letter-spacing: -0.035em;
+  font-weight: 600;
+  line-height: 1.01;
+  letter-spacing: -0.032em;
+  word-spacing: 0.05em;
   color: var(--ink);
 }
 
@@ -977,8 +1245,8 @@ body {
   max-width: 34ch;
   font-size: clamp(1rem, 1.2vw, 1.125rem);
   font-weight: 400;
-  line-height: 1.6;
-  letter-spacing: -0.004em;
+  line-height: 1.55;
+  letter-spacing: -0.008em;
   color: var(--ink-2);
 }
 
@@ -1002,27 +1270,80 @@ body {
   gap: 14px;
 }
 
+/* ---------------------------------------------------------------------------
+   The readout is the signature.
+
+   It is on screen for the whole film and it is the one place the page shows
+   its own workings: which of thirty-one shots you are in, and how far the
+   score has run. A plain filling bar would have said "loading". Graduated in
+   tenths with both ends marked, it says the same thing a rule says — that
+   this is a position on a measured scale, which is the argument the writing
+   makes in words a few screens further down.
+   ------------------------------------------------------------------------ */
+
 .readout__index {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
   font-family: var(--mono);
   font-size: 12px;
   font-weight: 400;
-  letter-spacing: 0.14em;
-  color: var(--ink-3);
+  letter-spacing: var(--track-util);
   font-variant-numeric: tabular-nums;
 }
 
+/* The live half and the fixed half, told apart by colour rather than by a
+   separator doing double duty. */
+.readout__now {
+  color: var(--accent-ink);
+  font-weight: 500;
+}
+
+.readout__of {
+  color: var(--ink-3);
+}
+
 .readout__track {
+  position: relative;
   display: block;
-  width: clamp(72px, 12vw, 148px);
+  width: clamp(78px, 12vw, 156px);
+  height: 9px;
+}
+
+/* The graduations, and a tick closing the right-hand end — a scale that stops
+   short of its own last mark is not a scale. */
+.readout__track::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-right: 1px solid var(--line);
+  background: repeating-linear-gradient(
+    to right,
+    var(--line) 0 1px,
+    transparent 1px 10%
+  );
+}
+
+.readout__track::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
   height: 1px;
   background: var(--line-soft);
-  overflow: hidden;
 }
 
 .readout__bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
   display: block;
   width: 100%;
-  height: 100%;
+  height: 1px;
   background: var(--accent);
   transform-origin: 0 50%;
   transform: scaleX(0);
@@ -1049,7 +1370,7 @@ body {
   height: 34px;
   background: linear-gradient(to bottom, transparent, var(--ink-3));
   transform-origin: 50% 0;
-  animation: drop 2600ms var(--ease) infinite;
+  animation: drop 2600ms var(--ease-in-out) infinite;
 }
 
 .hint__text {
@@ -1086,14 +1407,17 @@ body {
   letter-spacing: 0.1em;
   color: var(--ink-3);
   opacity: 0;
-  transform: translateY(6px);
-  transition: opacity 600ms var(--ease), transform 600ms var(--ease);
+  translate: 0 6px;
+  transition:
+    opacity var(--shed) var(--ease-out),
+    translate var(--shed) var(--ease-out);
   pointer-events: none;
 }
 
 .tier[data-show] {
   opacity: 1;
-  transform: none;
+  translate: none;
+  transition-duration: var(--pop);
 }
 
 /* --- cursor -------------------------------------------------------------- */
@@ -1118,7 +1442,7 @@ body {
   left: 0;
   opacity: 0;
   will-change: transform;
-  transition: opacity 400ms var(--ease);
+  transition: opacity var(--pop) var(--ease-out);
 }
 
 .cursor__dot {
@@ -1129,38 +1453,65 @@ body {
   background: var(--ink);
 }
 
+/* One size, scaled.
+   Animating width, height and margin runs layout on every frame of a thing
+   that is already following the pointer at sixty hertz. The ring keeps a
+   fixed 28px box and changes size with `scale`, which stays on the
+   compositor — and, being its own property, composes with the `transform`
+   the pointer loop writes instead of fighting it for the same slot. */
 .cursor__ring {
+  --ring: 1;
   width: 28px;
   height: 28px;
   margin: -14px 0 0 -14px;
   border: 1px solid var(--line);
   border-radius: 50%;
+  transform-origin: 50% 50%;
+  scale: var(--ring);
   transition:
-    opacity 400ms var(--ease),
-    width 520ms var(--ease),
-    height 520ms var(--ease),
-    margin 520ms var(--ease),
-    border-color 520ms var(--ease);
+    opacity var(--pop) var(--ease-out),
+    scale var(--pop) var(--ease-out),
+    border-color var(--pop) var(--ease-out);
+}
+
+/* Accent means "this can be turned"; ink means "this is a control". Two
+   states the ring can be in, and they never mean the same thing.
+
+   The order below is the priority, resolved here rather than in the component
+   because the two facts arrive from different places: the mode comes from the
+   canvas drag through the store, the link flag from the element actually
+   under the pointer. Every rule has the same specificity, so the last one
+   that matches is the one that applies. */
+.cursor[data-mode='product'] .cursor__ring {
+  --ring: 1.43;
 }
 
 .cursor[data-mode='drag'] .cursor__ring {
-  width: 54px;
-  height: 54px;
-  margin: -27px 0 0 -27px;
+  --ring: 1.93;
   border-color: var(--accent);
 }
 
+/* A button under the pointer beats "this shot can be turned" — the canvas
+   reports the latter for a whole interactive passage, including the moments
+   the pointer is up in the navigation. */
+.cursor[data-link] .cursor__ring {
+  --ring: 1.6;
+  border-color: var(--ink-3);
+}
+
+/* A drag already under way beats everything. */
 .cursor[data-mode='dragging'] .cursor__ring {
-  width: 34px;
-  height: 34px;
-  margin: -17px 0 0 -17px;
+  --ring: 1.21;
   border-color: var(--accent);
 }
 
-.cursor[data-mode='product'] .cursor__ring {
-  width: 40px;
-  height: 40px;
-  margin: -20px 0 0 -20px;
+/* The ring presses too. Buttons take a scale on :active and the canvas
+   tightens its ring while it is being turned — this is the same gesture
+   getting the same answer everywhere, including over things that are not
+   buttons at all. */
+.cursor[data-press] .cursor__ring {
+  scale: calc(var(--ring) * 0.86);
+  transition-duration: var(--pop), var(--press), var(--pop);
 }
 
 /* --- loader -------------------------------------------------------------- */
@@ -1173,7 +1524,7 @@ body {
   place-items: center;
   background: var(--ground);
   opacity: 1;
-  transition: opacity 900ms var(--ease);
+  transition: opacity 620ms var(--ease-out);
 }
 
 .loader[data-lifting] {
@@ -1183,7 +1534,7 @@ body {
 
 .loader[data-lifting] .loader__label {
   opacity: 0;
-  transition: opacity 320ms var(--ease);
+  transition: opacity 240ms var(--ease-out);
 }
 
 .loader__inner {
@@ -1216,8 +1567,41 @@ body {
   height: 100%;
   background: var(--ink);
   transform-origin: 0 50%;
+  /* Never from zero: a bar with no width is a bar that is not there. */
   transform: scaleX(0.04);
-  transition: transform 700ms var(--ease);
+  /* A progress bar is constant motion, so it gets the one easing that has no
+     opinion. Seven hundred milliseconds of ease-out made every jump in the
+     real download arrive late, which reads as a slower download. */
+  transition: transform 280ms linear;
+}
+
+/* ---------------------------------------------------------------------------
+   Scroll reveal.
+
+   Nothing here is hidden by the stylesheet. The observer in Sections.tsx
+   stamps data-reveal on an element before the browser paints it and clears it
+   when the group comes into view, so a page whose script never ran is a page
+   that is simply readable — the failure mode of the alternative is a blank
+   article, which is not a trade worth making for a fade.
+
+   The rise is small and the stagger short. This is punctuation for the
+   scroll, not an entrance the reader has to sit through: at 45ms a step and a
+   270ms ceiling, a twelve-item list has finished arriving before the eye has
+   reached the third line of it.
+   ------------------------------------------------------------------------ */
+
+[data-reveal] {
+  opacity: 0;
+  translate: 0 14px;
+  transition:
+    opacity 420ms var(--ease-out),
+    translate 420ms var(--ease-out);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+[data-reveal='in'] {
+  opacity: 1;
+  translate: none;
 }
 
 /* ---------------------------------------------------------------------------
@@ -1281,7 +1665,7 @@ body {
   }
 
   :root[data-theme='dark'] .chrome__theme-knob {
-    transform: translateX(14px);
+    translate: 14px 0;
   }
 
   .sec {
@@ -1330,9 +1714,15 @@ body {
     font-size: clamp(1.75rem, 8.4vw, 2.4rem);
   }
 
-  .caption__eyebrow {
-    font-size: 11.5px;
-    letter-spacing: 0.16em;
+  /* At this width the tie between number and subject costs more room than it
+     earns; the gap alone carries the split. */
+  .caption__slate {
+    font-size: 11px;
+    gap: 0.6em;
+  }
+
+  .caption__shot::after {
+    display: none;
   }
 
   .chrome {
@@ -1385,13 +1775,60 @@ body {
 
 /* --- reduced motion ------------------------------------------------------ */
 
+/* ---------------------------------------------------------------------------
+   Reduced motion.
+
+   Reduced, not removed. The blanket `* { transition-duration: 0.01ms }` that
+   used to live here threw away the colour and opacity transitions too, and
+   those are the ones doing the explaining: without them the theme switch
+   becomes a flash, the replay control teleports into the corner, and the
+   caption cuts rather than dissolves. What actually causes trouble is
+   movement, so movement is what goes.
+   ------------------------------------------------------------------------ */
+
 @media (prefers-reduced-motion: reduce) {
+  /* Nothing travels. */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-property: opacity, color, background-color, border-color, fill,
+      stroke !important;
+  }
+
   .hint__rule {
     animation: none;
     opacity: 0.6;
+    transform: scaleY(1);
   }
 
-  * {
-    transition-duration: 0.01ms !important;
+  /* Already in place, with only the fade left to do. */
+  [data-reveal] {
+    opacity: 1;
+    translate: none;
+  }
+
+  .restart,
+  .tier {
+    translate: none;
+  }
+
+  /* The ring stops resizing, but it still says which of the three things it
+     is over — that is information, not decoration. */
+  .cursor__ring {
+    scale: 1;
+  }
+
+  /* A press still has to be answered; it just answers in colour. */
+  .cta:active,
+  .chrome__mark:active,
+  .chrome__links button:active,
+  .sound:active,
+  .lang button:active,
+  .chrome__theme:active,
+  .restart[data-show]:active {
+    scale: 1;
+    opacity: 0.55;
   }
 }
